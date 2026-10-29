@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sedeam</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    /* ---------- Barra superior ---------- */
+    .top { position: sticky; top: 0; z-index: 20; background: var(--chrome); border-bottom: 1px solid var(--border); }
+    .top-inner { max-width: 1280px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; gap: 28px; height: 58px; }
+    nav { display: flex; gap: 2px; height: 100%; }
+    nav a {
+      color: var(--text-2); text-decoration: none; text-transform: uppercase; letter-spacing: .12em;
+      font-size: 13px; font-weight: 700; display: flex; align-items: center; padding: 0 14px;
+      border-bottom: 2px solid transparent;
+    }
+    nav a:hover { color: var(--text); }
+    nav a[aria-current="page"] { color: #fff; border-bottom-color: var(--accent); }
+    .me-chip { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .me-chip .avatar { width: 34px; height: 34px; font-size: 18px; border-radius: 6px; }
+    .me-chip .lvl { min-width: 20px; height: 20px; font-size: 10px; right: -7px; bottom: -7px; }
+    .me-chip .who { text-align: right; line-height: 1.25; }
+    .me-chip .who b { display: block; font-size: 13px; }
+    .me-chip .who span { font-size: 11px; }
+    .update-banner { background: linear-gradient(90deg, rgba(90,169,230,.18), rgba(90,169,230,.06)); border-bottom: 1px solid var(--border); }
+    .update-banner[hidden] { display: none; }
+    .update-banner div { max-width: 1280px; margin: 0 auto; padding: 9px 20px; display: flex; gap: 12px; align-items: center; color: var(--accent); }
+    .update-banner a { margin-left: auto; }
+
+    main { max-width: 1280px; margin: 0 auto; padding: 24px 20px 64px; }
+    section.view[hidden] { display: none; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .card-head h2 { font-size: 15px; }
+    .h-row { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 12px; }
+    .h-row h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .12em; color: var(--text-2); font-weight: 700; }
+
+    /* ---------- Biblioteca ---------- */
+    .library { display: grid; grid-template-columns: 250px 1fr; gap: 24px; align-items: start; }
+    .side { position: sticky; top: 82px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; max-height: calc(100vh - 106px); overflow-y: auto; }
+    .side input { width: 100%; margin-bottom: 8px; }
+    .side .group { padding: 10px 8px 4px; }
+    .side a { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: var(--text-2); }
+    .side a:hover { background: var(--surface-2); color: var(--text); }
+    .side a[aria-current="page"] { background: var(--surface-3); color: #fff; }
+    .side a .tile { width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; font-size: 13px; flex: none; background: color-mix(in srgb, var(--game) 45%, #0a0f15); }
+    .side a .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .side a.playing .nm { color: var(--playing); }
+    .side a.unplayed { opacity: .55; }
+    .side a .hrs { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; margin-bottom: 32px; }
+    .shelf.recent { grid-template-columns: repeat(3, 1fr); }
+    .item { text-decoration: none; color: inherit; display: block; }
+    .item .capsule { font-size: 15px; transition: transform .15s, box-shadow .15s; }
+    .shelf.recent .item .capsule { font-size: 17px; aspect-ratio: 16 / 10; }
+    .shelf.recent .item .capsule .art { top: 50%; right: 6%; transform: translateY(-50%) rotate(-10deg); }
+    .shelf.recent .item .capsule .ttl { right: 45%; }
+    .item:hover .capsule { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.2); }
+    .item .meta { margin-top: 8px; font-size: 12px; }
+    .item .meta b { display: block; font-size: 13px; color: var(--text); }
+    .item.unplayed .capsule { filter: saturate(.35) brightness(.7); }
+    .item .live { color: var(--playing); display: flex; align-items: center; gap: 6px; }
+
+    .news { display: grid; gap: 10px; margin-bottom: 32px; }
+    .news article { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: grid; grid-template-columns: 90px 1fr; gap: 14px; }
+    .news time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .news h3 { font-size: 14px; margin-bottom: 2px; }
+    .news p { margin: 0; color: var(--text-2); }
+
+    /* Ficha de juego */
+    .hero {
+      position: relative; border-radius: var(--radius); overflow: hidden; height: 280px; isolation: isolate;
+      background:
+        radial-gradient(90% 120% at 85% 10%, color-mix(in srgb, var(--game) 70%, #fff 10%) 0%, transparent 55%),
+        linear-gradient(120deg, #070b10 15%, color-mix(in srgb, var(--game) 55%, #070b10) 100%);
+    }
+    .hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(135deg, rgba(255,255,255,.03) 0 2px, transparent 2px 11px); }
+    .hero .bg-art { position: absolute; right: 4%; top: 50%; transform: translateY(-50%) rotate(-10deg); font-size: 200px; line-height: 1; filter: drop-shadow(0 20px 40px rgba(0,0,0,.5)); z-index: -1; }
+    .hero .txt { position: absolute; left: 32px; bottom: 28px; right: 40%; }
+    .hero h1 { font-size: 46px; font-weight: 900; text-transform: uppercase; line-height: .95; letter-spacing: -.01em; text-shadow: 0 4px 24px rgba(0,0,0,.6); }
+    .hero .tag { margin-top: 10px; color: var(--text-2); font-size: 14px; max-width: 520px; }
+    .actionbar { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin: 14px 0 16px; }
+    .stat .eyebrow { font-size: 10px; }
+    .stat b { display: block; font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .stat .xp { width: 140px; margin-top: 6px; }
+    .detail { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+    .info dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+    .info dt { color: var(--muted); }
+    .info dd { margin: 0; overflow-wrap: anywhere; }
+
+    /* ---------- Estadísticas ---------- */
+    .profile { display: grid; grid-template-columns: minmax(280px, 1.2fr) 3fr; gap: 24px; align-items: center;
+      background: linear-gradient(120deg, #1a2a40, var(--surface) 60%); }
+    .profile .avatar { width: 76px; height: 76px; font-size: 38px; border-radius: 10px; }
+    .profile .who { display: flex; gap: 18px; align-items: center; }
+    .profile .name { font-size: 22px; font-weight: 800; }
+    .profile .xp { margin-top: 8px; }
+    .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .tile { background: rgba(0,0,0,.22); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .tile .v { font-size: 22px; font-weight: 700; margin-top: 4px; white-space: nowrap; }
+    .tile .s { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .seg { display: inline-flex; background: var(--chrome); border: 1px solid var(--axis); border-radius: 8px; padding: 2px; }
+    .seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; color: var(--text-2); }
+    .seg button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }
+    .period { display: flex; align-items: center; gap: 6px; }
+    .period button { padding: 5px 10px; }
+    .period-label { min-width: 160px; text-align: center; font-weight: 600; }
+
+    .chart { width: 100%; position: relative; }
+    .chart svg { display: block; width: 100%; overflow: visible; }
+    .axis-label { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .empty { padding: 40px 0; text-align: center; color: var(--muted); }
+
+    .totals { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+    .trow { display: grid; grid-template-columns: 16px minmax(120px, 200px) 1fr 90px 48px; gap: 10px; align-items: center; padding: 5px 0; }
+    .trow .bar { height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+    .trow .bar i { display: block; height: 100%; border-radius: 0 4px 4px 0; }
+    .trow .val { text-align: right; font-variant-numeric: tabular-nums; }
+    .trow .pct { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .trow.sum { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 9px; font-weight: 600; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid2 > .card { margin-bottom: 0; }
+    .heat-wrap { overflow-x: auto; padding-bottom: 4px; }
+    .heat-legend { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); justify-content: flex-end; margin-top: 10px; flex-wrap: wrap; }
+    .heat-legend .sw { width: 11px; height: 11px; border-radius: 2px; }
+    .heat-legend span.t { margin: 0 6px 0 2px; }
+    .records { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .records .tile { background: var(--surface-2); }
+    .records .tile .v { font-size: 17px; }
+
+    /* ---------- Logros ---------- */
+    .ach-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .ach-head .big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .ach-head .xp { flex: 1; min-width: 200px; height: 10px; border-radius: 5px; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 16px; }
+    .chips button { border-radius: 999px; padding: 5px 12px; font-size: 12px; background: var(--surface); }
+    .chips button[aria-pressed="true"] { background: var(--surface-3); border-color: var(--accent); }
+    .ach-list { display: grid; gap: 8px; }
+    .ach { display: flex; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+    .ach .ico { width: 56px; height: 56px; border-radius: 8px; display: grid; place-items: center; font-size: 30px; flex: none;
+      background: radial-gradient(circle at 30% 25%, #3c5f8a, #1d2b45); box-shadow: inset 0 0 0 1px rgba(232, 182, 76, .45); }
+    .ach.locked .ico { background: var(--surface-3); box-shadow: none; }
+    .ach.locked .ico span { filter: grayscale(1); opacity: .4; }
+    .ach .body { flex: 1; min-width: 0; }
+    .ach .name { font-weight: 700; font-size: 14px; }
+    .ach.locked .name { color: var(--text-2); }
+    .ach .desc { color: var(--text-2); font-size: 12px; margin-top: 2px; }
+    .ach .prog { display: flex; align-items: center; gap: 10px; margin-top: 8px; max-width: 420px; }
+    .ach .prog .xp { flex: 1; }
+    .ach .prog span { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ach .when { text-align: right; font-size: 11px; color: var(--muted); white-space: nowrap; }
+    .ach .when b { display: block; color: var(--gold); font-size: 12px; }
+    .ach-compact .ach { padding: 8px 10px; }
+    .ach-compact .ach .ico { width: 40px; height: 40px; font-size: 22px; }
+    .ach-compact .ach .name { font-size: 13px; }
+
+    /* ---------- Ajustes ---------- */
+    .settings h3 { font-size: 13px; margin-bottom: 8px; }
+    .field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+    .help { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+    .glist { display: grid; gap: 6px; }
+    .grow { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); }
+    .grow .capsule { width: 30px; flex: none; }
+    .grow .info2 { flex: 1; min-width: 0; }
+    .grow .doms { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+    .add { display: grid; grid-template-columns: 70px 1fr 2fr auto; gap: 8px; margin-top: 10px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 12px; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+    @media (max-width: 1000px) {
+      .shelf.recent { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+      .library { grid-template-columns: 1fr; }
+      .side { position: static; max-height: none; }
+      .detail, .grid2, .profile { grid-template-columns: 1fr; }
+      .tiles { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+      .hero .txt { right: 32px; }
+      .hero .bg-art { opacity: .5; }
+    }
+    @media (max-width: 640px) {
+      .top-inner { gap: 10px; padding: 0 16px; }
+      .top .wordmark span, .me-chip .who { display: none; }
+      nav a { padding: 0 8px; font-size: 11px; letter-spacing: .06em; }
+      main { padding: 16px 16px 48px; }
+      .hero { height: 220px; }
+      .hero h1 { font-size: 30px; }
+      .trow { grid-template-columns: 12px 1fr 70px 40px; }
+      .trow .bar { display: none; }
+      .add, .records { grid-template-columns: 1fr; }
+      .news article { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="top-inner">
+      <a class="wordmark" href="#biblioteca"><img src="icons/icon32.png" alt=""><span>SEDEAM</span></a>
+      <nav>
+        <a href="#biblioteca" data-tab="biblioteca">Biblioteca</a>
+        <a href="#estadisticas" data-tab="estadisticas">Estadísticas</a>
+        <a href="#logros" data-tab="logros">Logros</a>
+        <a href="#ajustes" data-tab="ajustes">Ajustes</a>
+      </nav>
+      <div class="me-chip">
+        <div class="who"><b id="chip-title"></b><span id="chip-status"></span></div>
+        <div class="avatar" id="chip-avatar" aria-hidden="true">🧑‍💼<span class="lvl" id="chip-lvl">1</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="update-banner" id="update-banner" hidden>
+    <div><span id="update-text"></span><a class="btn" href="#ajustes">Cómo actualizar</a></div>
+  </div>
+
+  <main>
+    <!-- BIBLIOTECA -->
+    <section class="view" id="biblioteca">
+      <div class="library">
+        <aside class="side">
+          <input type="search" id="search" placeholder="Buscar juego" aria-label="Buscar juego">
+          <a href="#biblioteca" id="home-link">🏠 <span class="nm">Inicio</span></a>
+          <div class="group eyebrow" id="side-count">Juegos</div>
+          <div id="side-list"></div>
+        </aside>
+        <div id="lib-main"></div>
+      </div>
+    </section>
+
+    <!-- ESTADÍSTICAS -->
+    <section class="view" id="estadisticas" hidden>
+      <div class="card profile">
+        <div class="who">
+          <div class="avatar" id="p-avatar" aria-hidden="true">🧑‍💼<span class="lvl" id="p-lvl">1</span></div>
+          <div style="flex:1;min-width:0">
+            <div class="eyebrow" id="p-level">Nivel 1</div>
+            <div class="name" id="p-title">Becario</div>
+            <div class="xp" role="progressbar" aria-label="Progreso al siguiente nivel"><i id="p-xp" style="width:0"></i></div>
+            <div class="xp-label" id="p-xp-label"></div>
+          </div>
+        </div>
+        <div class="tiles" id="tiles"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Actividad</h2>
+          <div class="seg" role="group" aria-label="Periodo">
+            <button data-range="week">Semana</button>
+            <button data-range="month">Mes</button>
+            <button data-range="year">Año</button>
+          </div>
+          <div class="period">
+            <button id="prev" aria-label="Periodo anterior">‹</button>
+            <span class="period-label" id="period-label"></span>
+            <button id="next" aria-label="Periodo siguiente">›</button>
+          </div>
+        </div>
+        <div class="chart" id="chart"></div>
+        <div class="totals" id="totals"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Último año</h2><span class="muted" id="heat-sub"></span></div>
+        <div class="heat-wrap" id="heat"></div>
+        <div class="heat-legend" id="heat-legend"></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-head"><h2>¿A qué hora juegas?</h2><span class="muted">Todo el historial</span></div>
+          <div class="chart" id="hours"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Récords</h2></div>
+          <div class="records" id="records"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOGROS -->
+    <section class="view" id="logros" hidden>
+      <div class="card">
+        <div class="ach-head">
+          <div><div class="eyebrow">Logros desbloqueados</div><div class="big" id="ach-count"></div></div>
+          <div class="xp gold" role="progressbar" aria-label="Logros desbloqueados"><i id="ach-bar" style="width:0"></i></div>
+          <span class="muted num" id="ach-pct"></span>
+        </div>
+      </div>
+      <div class="chips" id="ach-filter"></div>
+      <div class="ach-list" id="ach-list"></div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section class="view settings" id="ajustes" hidden>
+      <div class="card">
+        <h3>Actualizaciones</h3>
+        <dl class="kv" id="upd-info"></dl>
+        <div class="actions"><button id="upd-check">Buscar actualizaciones ahora</button></div>
+        <p class="help" id="upd-help"></p>
+      </div>
+
+      <div class="card">
+        <h3>Tiempo activo</h3>
+        <div class="field">
+          <label for="idle">Dejar de contar tras</label>
+          <select id="idle">
+            <option value="1">1 minuto</option>
+            <option value="2">2 minutos</option>
+            <option value="3">3 minutos</option>
+            <option value="5">5 minutos</option>
+            <option value="10">10 minutos</option>
+          </select>
+          <span>sin tocar ratón ni teclado</span>
+        </div>
+        <p class="help">Solo cuenta la pestaña activa de una sede, con Chrome en primer plano y mientras estés delante. El rato de inactividad se descuenta.</p>
+        <div class="field" style="margin-top:14px">
+          <input type="checkbox" id="notif"><label for="notif">Avisarme al desbloquear logros, subir de nivel o actualizarse</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Juegos</h3>
+        <p class="help" style="margin:0 0 10px">Cada juego es una web y cuenta todos sus subdominios (sede., www2.…). Los oficiales llegan con el catálogo; aquí puedes desactivarlos o añadir los tuyos.</p>
+        <div class="glist" id="glist"></div>
+        <form class="add" id="add">
+          <input id="add-emoji" placeholder="🎮" maxlength="4" aria-label="Emoji">
+          <input id="add-name" placeholder="Nombre (p. ej. ATC Canarias)" required aria-label="Nombre">
+          <input id="add-domains" placeholder="Dominios separados por comas (p. ej. gobiernodecanarias.org)" required aria-label="Dominios">
+          <button class="primary" type="submit">Añadir juego</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Tus datos</h3>
+        <p class="help" style="margin:0 0 10px">Todo se guarda solo en este navegador y sobrevive a las actualizaciones. La extensión solo mira la dirección de la pestaña, nunca el contenido de las páginas.</p>
+        <div class="actions">
+          <button id="exp-json">Exportar copia (JSON)</button>
+          <button id="exp-csv">Exportar a Excel (CSV)</button>
+          <button id="imp">Importar copia…</button>
+          <input type="file" id="imp-file" accept="application/json,.json" hidden>
+          <button class="danger" id="reset">Borrar todo</button>
+        </div>
+        <p class="help" id="data-msg"></p>
+      </div>
+    </section>
+  </main>
+
+  <div class="tooltip" id="tip" hidden></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

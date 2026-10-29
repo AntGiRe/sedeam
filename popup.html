@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Sedeam</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    body { width: 390px; background: var(--page); }
+    .bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--chrome); border-bottom: 1px solid var(--border); }
+    .bar .ver { font-size: 11px; color: var(--muted); }
+    .update { display: block; padding: 8px 14px; background: rgba(90, 169, 230, .12); color: var(--accent); font-size: 12px; text-decoration: none; border-bottom: 1px solid var(--border); }
+    .update[hidden] { display: none; }
+    .me { display: flex; gap: 14px; align-items: center; padding: 16px 14px 14px; }
+    .me-info { flex: 1; min-width: 0; }
+    .me-title { font-size: 15px; font-weight: 700; }
+    .me-status { font-size: 12px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .me .xp { margin-top: 8px; }
+
+    .now {
+      margin: 0 14px 12px; border-radius: var(--radius); overflow: hidden; position: relative;
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--game) 45%, #0a0f15), #0f1a12);
+      border: 1px solid rgba(139, 212, 91, .35);
+    }
+    .now[hidden] { display: none; }
+    .now .capsule { width: 40px; flex: none; }
+    .now .label { color: var(--playing); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+    .now .name { font-weight: 700; font-size: 14px; }
+    .now .time { margin-left: auto; text-align: right; }
+    .now .time b { font-size: 16px; font-variant-numeric: tabular-nums; display: block; }
+    .now .time span { font-size: 11px; color: var(--text-2); }
+
+    .section { padding: 0 14px; display: flex; justify-content: space-between; align-items: baseline; margin: 4px 0 6px; }
+    ul { list-style: none; margin: 0; padding: 0 6px; max-height: 300px; overflow-y: auto; }
+    li { display: flex; gap: 12px; align-items: center; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
+    li:hover { background: var(--surface-2); }
+    li.unplayed { opacity: .5; }
+    li .capsule { width: 34px; flex: none; }
+    .g-main { flex: 1; min-width: 0; }
+    .g-name { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .g-sub { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .g-hours { text-align: right; white-space: nowrap; }
+    .g-hours b { display: block; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .g-hours span { font-size: 11px; color: var(--muted); }
+    footer { padding: 12px 14px 14px; border-top: 1px solid var(--border); margin-top: 6px; display: flex; gap: 10px; align-items: center; }
+    .last { flex: 1; min-width: 0; font-size: 12px; display: flex; gap: 8px; align-items: center; }
+    .last .ico { font-size: 22px; }
+    .last b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a class="wordmark" href="app.html#biblioteca" target="_blank"><img src="icons/icon32.png" alt=""><span>SEDEAM</span></a>
+    <span class="ver" id="ver"></span>
+  </div>
+  <a class="update" id="update" href="app.html#ajustes" target="_blank" hidden></a>
+
+  <div class="me">
+    <div class="avatar" id="avatar" aria-hidden="true">🧑‍💼<span class="lvl" id="lvl">1</span></div>
+    <div class="me-info">
+      <div class="me-title" id="title">Becario</div>
+      <div class="me-status" id="status"></div>
+      <div class="xp" role="progressbar" aria-label="Progreso al siguiente nivel"><i id="xp" style="width:0"></i></div>
+      <div class="xp-label" id="xp-label"></div>
+    </div>
+  </div>
+
+  <div class="now" id="now" hidden>
+    <div id="now-art"></div>
+    <div>
+      <div class="label"><span class="playing-dot" aria-hidden="true"></span>Jugando ahora</div>
+      <div class="name" id="now-name"></div>
+    </div>
+    <div class="time"><b id="now-session"></b><span>esta sesión</span></div>
+  </div>
+
+  <div class="section">
+    <span class="eyebrow">Biblioteca</span>
+    <span class="muted num" id="total"></span>
+  </div>
+  <ul id="games"></ul>
+
+  <footer>
+    <div class="last" id="last"></div>
+    <a class="btn primary" href="app.html#biblioteca" target="_blank">Abrir biblioteca</a>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

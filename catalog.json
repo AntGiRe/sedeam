@@ -1,0 +1,658 @@
+{
+  "catalogVersion": 1,
+  "minAppVersion": "0.2.0",
+  "updated": "2026-10-29",
+  "games": [
+    {
+      "id": "aeat",
+      "name": "Agencia Tributaria",
+      "developer": "AEAT",
+      "genre": "Estrategia por turnos trimestrales",
+      "tagline": "El clásico. Nunca pasa de moda (ni de plazo).",
+      "emoji": "🏛️",
+      "color": "#3987e5",
+      "domains": [
+        "agenciatributaria.gob.es",
+        "agenciatributaria.es"
+      ],
+      "url": "https://sede.agenciatributaria.gob.es/"
+    },
+    {
+      "id": "segsocial",
+      "name": "Seguridad Social",
+      "developer": "TGSS · INSS",
+      "genre": "Gestión de recursos humanos",
+      "tagline": "Altas, bajas y RED. Mucho RED.",
+      "emoji": "🛡️",
+      "color": "#d95926",
+      "domains": [
+        "seg-social.es",
+        "seg-social.gob.es"
+      ],
+      "url": "https://sede.seg-social.gob.es/"
+    },
+    {
+      "id": "dehu",
+      "name": "DEHú",
+      "developer": "Secretaría General de Administración Digital",
+      "genre": "Terror psicológico",
+      "tagline": "Ese pequeño escalofrío al abrir el buzón.",
+      "emoji": "📬",
+      "color": "#199e70",
+      "domains": [
+        "dehu.redsara.es"
+      ],
+      "url": "https://dehu.redsara.es/"
+    },
+    {
+      "id": "catastro",
+      "name": "Catastro",
+      "developer": "Dirección General del Catastro",
+      "genre": "Exploración de mundo abierto",
+      "tagline": "Referencias catastrales de 20 caracteres. Por diversión.",
+      "emoji": "🗺️",
+      "color": "#c98500",
+      "domains": [
+        "sedecatastro.gob.es",
+        "catastro.hacienda.gob.es",
+        "catastro.minhap.es",
+        "catastro.meh.es"
+      ],
+      "url": "https://www.sedecatastro.gob.es/"
+    },
+    {
+      "id": "registros",
+      "name": "Registros",
+      "developer": "Colegio de Registradores",
+      "genre": "Puzle de lectura",
+      "tagline": "Notas simples, cuentas anuales y paciencia infinita.",
+      "emoji": "📚",
+      "color": "#d55181",
+      "domains": [
+        "registradores.org",
+        "rmc.es"
+      ],
+      "url": "https://www.registradores.org/"
+    },
+    {
+      "id": "dgt",
+      "name": "DGT",
+      "developer": "Dirección General de Tráfico",
+      "genre": "Conducción (de expedientes)",
+      "tagline": "Transferencias, bajas y la cita previa imposible.",
+      "emoji": "🚗",
+      "color": "#008300",
+      "domains": [
+        "dgt.gob.es",
+        "dgt.es"
+      ],
+      "url": "https://sede.dgt.gob.es/"
+    },
+    {
+      "id": "boe",
+      "name": "BOE",
+      "developer": "Agencia Estatal BOE",
+      "genre": "Novela visual",
+      "tagline": "Lectura ligera para antes de dormir.",
+      "emoji": "📰",
+      "color": "#9085e9",
+      "domains": [
+        "boe.es"
+      ],
+      "url": "https://www.boe.es/"
+    },
+    {
+      "id": "sepe",
+      "name": "SEPE",
+      "developer": "Servicio Público de Empleo Estatal",
+      "genre": "Supervivencia",
+      "tagline": "Contrat@, Certific@2 y otras arrobas.",
+      "emoji": "💼",
+      "color": "#e66767",
+      "domains": [
+        "sepe.gob.es",
+        "sepe.es"
+      ],
+      "url": "https://sede.sepe.gob.es/"
+    }
+  ],
+  "levels": [
+    [
+      0,
+      "Becario"
+    ],
+    [
+      5,
+      "Auxiliar administrativo"
+    ],
+    [
+      25,
+      "Oficial de 2ª"
+    ],
+    [
+      75,
+      "Oficial de 1ª"
+    ],
+    [
+      150,
+      "Gestor"
+    ],
+    [
+      300,
+      "Gestor colegiado"
+    ],
+    [
+      600,
+      "Gestor senior"
+    ],
+    [
+      1000,
+      "Asesor fiscal"
+    ],
+    [
+      2000,
+      "Leyenda de la sede"
+    ],
+    [
+      5000,
+      "Inspector honorífico"
+    ]
+  ],
+  "achievements": [
+    {
+      "id": "bienvenida",
+      "emoji": "🎟️",
+      "name": "Bienvenido al sistema",
+      "desc": "Tu primer minuto cronometrado en una sede.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "target": {
+          "minutes": 1
+        }
+      }
+    },
+    {
+      "id": "clave",
+      "emoji": "🔐",
+      "name": "Cl@ve permanente",
+      "desc": "1 hora en total. Ya no hay vuelta atrás.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "target": {
+          "hours": 1
+        }
+      }
+    },
+    {
+      "id": "habitual",
+      "emoji": "☕",
+      "name": "Habitual de la sede",
+      "desc": "10 horas acumuladas.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "target": {
+          "hours": 10
+        }
+      }
+    },
+    {
+      "id": "centenario",
+      "emoji": "💯",
+      "name": "Centenario fiscal",
+      "desc": "100 horas acumuladas.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "target": {
+          "hours": 100
+        }
+      }
+    },
+    {
+      "id": "mobiliario",
+      "emoji": "🪑",
+      "name": "Parte del mobiliario",
+      "desc": "500 horas acumuladas. Ya te saludan los funcionarios.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "target": {
+          "hours": 500
+        }
+      }
+    },
+    {
+      "id": "leyenda",
+      "emoji": "👑",
+      "name": "Leyenda de la ventanilla",
+      "desc": "1.000 horas acumuladas.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "target": {
+          "hours": 1000
+        }
+      }
+    },
+    {
+      "id": "maraton",
+      "emoji": "🏃",
+      "name": "Maratón en la sede",
+      "desc": "3 horas seguidas en la misma web sin pausas de más de 5 minutos.",
+      "rule": {
+        "type": "time",
+        "agg": "run",
+        "target": {
+          "hours": 3
+        }
+      }
+    },
+    {
+      "id": "mañana",
+      "emoji": "🫠",
+      "name": "Se me ha ido la mañana",
+      "desc": "5 horas seguidas en la misma web.",
+      "rule": {
+        "type": "time",
+        "agg": "run",
+        "target": {
+          "hours": 5
+        }
+      }
+    },
+    {
+      "id": "jornada",
+      "emoji": "⏰",
+      "name": "Jornada completa (en Hacienda)",
+      "desc": "8 horas en sedes en un solo día.",
+      "rule": {
+        "type": "time",
+        "agg": "day",
+        "target": {
+          "hours": 8
+        }
+      }
+    },
+    {
+      "id": "racha5",
+      "emoji": "✅",
+      "name": "Fichaje perfecto",
+      "desc": "5 días laborables seguidos en alguna sede.",
+      "rule": {
+        "type": "streak",
+        "days": 5
+      }
+    },
+    {
+      "id": "racha20",
+      "emoji": "🔥",
+      "name": "Más fijo que el 303",
+      "desc": "Racha de 20 días laborables seguidos.",
+      "rule": {
+        "type": "streak",
+        "days": 20
+      }
+    },
+    {
+      "id": "dias100",
+      "emoji": "📆",
+      "name": "Cien días de soledad tributaria",
+      "desc": "100 días distintos con actividad.",
+      "rule": {
+        "type": "daysPlayed",
+        "days": 100
+      }
+    },
+    {
+      "id": "doble",
+      "emoji": "🪟",
+      "name": "Doble ventanilla",
+      "desc": "AEAT y Seguridad Social el mismo día (10 min en cada una).",
+      "rule": {
+        "type": "sameDay",
+        "games": [
+          "aeat",
+          "segsocial"
+        ],
+        "minutes": 10
+      }
+    },
+    {
+      "id": "coleccionista",
+      "emoji": "🗂️",
+      "name": "Coleccionista de sedes",
+      "desc": "Jugar al menos a 5 webs distintas.",
+      "rule": {
+        "type": "gamesPlayed",
+        "count": 5,
+        "minutes": 5
+      }
+    },
+    {
+      "id": "noctambulo",
+      "emoji": "🌙",
+      "name": "Noctámbulo fiscal",
+      "desc": "10 minutos en una sede entre las 23:00 y las 6:00.",
+      "secret": true,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "hours": [
+          23,
+          6
+        ],
+        "target": {
+          "minutes": 10
+        }
+      }
+    },
+    {
+      "id": "madrugador",
+      "emoji": "🐓",
+      "name": "Madrugador tributario",
+      "desc": "10 minutos en una sede entre las 6:00 y las 7:00.",
+      "secret": true,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "hours": [
+          6,
+          7
+        ],
+        "target": {
+          "minutes": 10
+        }
+      }
+    },
+    {
+      "id": "viernes",
+      "emoji": "🍻",
+      "name": "Viernes por la tarde",
+      "desc": "1 hora en sedes un viernes después de las 17:00.",
+      "secret": true,
+      "rule": {
+        "type": "time",
+        "agg": "day",
+        "weekdays": [
+          5
+        ],
+        "hours": [
+          17,
+          24
+        ],
+        "target": {
+          "hours": 1
+        }
+      }
+    },
+    {
+      "id": "finde",
+      "emoji": "🛋️",
+      "name": "Sin fin de semana",
+      "desc": "30 minutos en sedes un sábado o domingo.",
+      "secret": true,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "weekdays": [
+          0,
+          6
+        ],
+        "target": {
+          "minutes": 30
+        }
+      }
+    },
+    {
+      "id": "agosto",
+      "emoji": "🏖️",
+      "name": "Agosto no existe",
+      "desc": "1 hora en sedes durante agosto.",
+      "secret": true,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "months": [
+          8
+        ],
+        "target": {
+          "hours": 1
+        }
+      }
+    },
+    {
+      "id": "navidad",
+      "emoji": "🎄",
+      "name": "Espíritu navideño tributario",
+      "desc": "10 minutos en una sede en Nochebuena, Navidad, Nochevieja, Año Nuevo o Reyes.",
+      "secret": true,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "dates": [
+          "12-24",
+          "12-25",
+          "12-31",
+          "01-01",
+          "01-06"
+        ],
+        "target": {
+          "minutes": 10
+        }
+      }
+    },
+    {
+      "id": "dia20",
+      "game": "aeat",
+      "emoji": "📅",
+      "name": "Superviviente del día 20",
+      "desc": "2 horas en la AEAT un último día de trimestre (20 de abril, julio u octubre, o 30 de enero).",
+      "rule": {
+        "type": "time",
+        "agg": "day",
+        "game": "aeat",
+        "dates": [
+          "04-20",
+          "07-20",
+          "10-20",
+          "01-30"
+        ],
+        "target": {
+          "hours": 2
+        }
+      }
+    },
+    {
+      "id": "renta",
+      "game": "aeat",
+      "emoji": "🧾",
+      "name": "Campaña de la Renta superada",
+      "desc": "40 horas en la AEAT entre abril y junio del mismo año.",
+      "rule": {
+        "type": "time",
+        "agg": "year",
+        "game": "aeat",
+        "months": [
+          4,
+          5,
+          6
+        ],
+        "target": {
+          "hours": 40
+        }
+      }
+    },
+    {
+      "id": "enero",
+      "game": "aeat",
+      "emoji": "🥶",
+      "name": "Cuesta de enero",
+      "desc": "20 horas en la AEAT en un mes de enero (390, 190, 180, 347…).",
+      "rule": {
+        "type": "time",
+        "agg": "year",
+        "game": "aeat",
+        "months": [
+          1
+        ],
+        "target": {
+          "hours": 20
+        }
+      }
+    },
+    {
+      "id": "aeat100",
+      "game": "aeat",
+      "emoji": "🏛️",
+      "name": "Socio de la Agencia",
+      "desc": "100 horas en la Agencia Tributaria.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "aeat",
+        "target": {
+          "hours": 100
+        }
+      }
+    },
+    {
+      "id": "afiliado",
+      "game": "segsocial",
+      "emoji": "🛡️",
+      "name": "Afiliado de honor",
+      "desc": "20 horas en la Seguridad Social.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "segsocial",
+        "target": {
+          "hours": 20
+        }
+      }
+    },
+    {
+      "id": "fin-de-mes",
+      "game": "segsocial",
+      "emoji": "🧮",
+      "name": "Cierre de seguros sociales",
+      "desc": "2 horas en la Seguridad Social en un mismo día de final de mes (del 25 al 31).",
+      "rule": {
+        "type": "time",
+        "agg": "day",
+        "game": "segsocial",
+        "dates": [
+          "*-25",
+          "*-26",
+          "*-27",
+          "*-28",
+          "*-29",
+          "*-30",
+          "*-31"
+        ],
+        "target": {
+          "hours": 2
+        }
+      }
+    },
+    {
+      "id": "notificado",
+      "game": "dehu",
+      "emoji": "📬",
+      "name": "Notificado y comparecido",
+      "desc": "1 hora en DEHú.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "dehu",
+        "target": {
+          "hours": 1
+        }
+      }
+    },
+    {
+      "id": "catastro",
+      "game": "catastro",
+      "emoji": "🗺️",
+      "name": "Topógrafo aficionado",
+      "desc": "5 horas en el Catastro.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "catastro",
+        "target": {
+          "hours": 5
+        }
+      }
+    },
+    {
+      "id": "registros",
+      "game": "registros",
+      "emoji": "📚",
+      "name": "Nota simple, vida compleja",
+      "desc": "5 horas en Registros.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "registros",
+        "target": {
+          "hours": 5
+        }
+      }
+    },
+    {
+      "id": "dgt",
+      "game": "dgt",
+      "emoji": "🚗",
+      "name": "Cita previa conseguida",
+      "desc": "2 horas en la DGT.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "dgt",
+        "target": {
+          "hours": 2
+        }
+      }
+    },
+    {
+      "id": "boe",
+      "game": "boe",
+      "emoji": "📰",
+      "name": "Lector del BOE",
+      "desc": "5 horas leyendo el BOE. Por gusto.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "boe",
+        "target": {
+          "hours": 5
+        }
+      }
+    },
+    {
+      "id": "sepe",
+      "game": "sepe",
+      "emoji": "💼",
+      "name": "Arroba de oro",
+      "desc": "5 horas en el SEPE.",
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "sepe",
+        "target": {
+          "hours": 5
+        }
+      }
+    }
+  ],
+  "news": [
+    {
+      "date": "2026-10-29",
+      "title": "Horas en Sede ahora es Sedeam",
+      "body": "Nueva biblioteca, logros con barra de progreso, ficha de cada juego y actualizaciones automáticas del catálogo."
+    }
+  ]
+}
