@@ -1,6 +1,6 @@
 {
-  "catalogVersion": 2,
-  "minAppVersion": "0.4.0",
+  "catalogVersion": 3,
+  "minAppVersion": "0.5.0",
   "updated": "2026-10-29",
   "games": [
     {
@@ -646,9 +646,134 @@
           "hours": 5
         }
       }
+    },
+    {
+      "id": "carga1",
+      "emoji": "🪪",
+      "name": "Demostrando que eres tú",
+      "desc": "1 hora en pantallas de identificación (Cl@ve).",
+      "rule": {
+        "type": "loading",
+        "agg": "sum",
+        "target": {
+          "hours": 1
+        }
+      }
+    },
+    {
+      "id": "carga10",
+      "emoji": "🔑",
+      "name": "La Cl@ve de la existencia",
+      "desc": "10 horas identificándote. Ya deberían conocerte.",
+      "rule": {
+        "type": "loading",
+        "agg": "sum",
+        "target": {
+          "hours": 10
+        }
+      }
+    },
+    {
+      "id": "carga-dia",
+      "emoji": "⏳",
+      "name": "Cargando… por favor, espere",
+      "desc": "20 minutos en pantallas de identificación en un mismo día.",
+      "secret": true,
+      "rule": {
+        "type": "loading",
+        "agg": "day",
+        "target": {
+          "minutes": 20
+        }
+      }
+    },
+    {
+      "id": "caida1",
+      "emoji": "💥",
+      "name": "Error 500: ya somos amigos",
+      "desc": "Ver caerse una sede por primera vez.",
+      "rule": {
+        "type": "outages",
+        "agg": "sum",
+        "count": 1
+      }
+    },
+    {
+      "id": "caida-dia",
+      "emoji": "🔁",
+      "name": "Reintentar, reintentar, reintentar",
+      "desc": "3 caídas de la sede en un mismo día.",
+      "rule": {
+        "type": "outages",
+        "agg": "day",
+        "count": 3
+      }
+    },
+    {
+      "id": "caida25",
+      "emoji": "🧯",
+      "name": "Superviviente de caídas",
+      "desc": "25 caídas de sedes en total.",
+      "rule": {
+        "type": "outages",
+        "agg": "sum",
+        "count": 25
+      }
+    },
+    {
+      "id": "caida-aeat",
+      "game": "aeat",
+      "emoji": "🏚️",
+      "name": "Mantenimiento no programado",
+      "desc": "10 caídas de la Agencia Tributaria.",
+      "rule": {
+        "type": "outages",
+        "agg": "sum",
+        "count": 10,
+        "game": "aeat"
+      }
+    },
+    {
+      "id": "caida-ss",
+      "game": "segsocial",
+      "emoji": "🚧",
+      "name": "Sistema RED… en rojo",
+      "desc": "5 caídas de la Seguridad Social.",
+      "rule": {
+        "type": "outages",
+        "agg": "sum",
+        "count": 5,
+        "game": "segsocial"
+      }
+    },
+    {
+      "id": "malabarista",
+      "emoji": "🤹",
+      "name": "Malabarista",
+      "desc": "5 pestañas de la misma sede abiertas a la vez.",
+      "rule": {
+        "type": "tabs",
+        "count": 5,
+        "perGame": true
+      }
+    },
+    {
+      "id": "pulpo",
+      "emoji": "🐙",
+      "name": "Pulpo administrativo",
+      "desc": "10 pestañas de sedes abiertas a la vez.",
+      "rule": {
+        "type": "tabs",
+        "count": 10
+      }
     }
   ],
   "news": [
+    {
+      "date": "2026-10-29",
+      "title": "Lo que no sale en la nómina",
+      "body": "Sedeam cuenta ahora el tiempo que pasas identificándote con Cl@ve, las veces que se cae la sede y tu récord de pestañas abiertas. Con 10 logros nuevos."
+    },
     {
       "date": "2026-10-29",
       "title": "Llegan las temporadas",
@@ -1079,5 +1204,12 @@
         "level": 6
       }
     }
-  ]
+  ],
+  "loading": {
+    "name": "Pantallas de carga",
+    "domains": [
+      "clave.gob.es"
+    ],
+    "urlContains": []
+  }
 }

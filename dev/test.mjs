@@ -9,6 +9,7 @@ import { matchGame, normalizeDomain, allGames } from '../lib/games.js';
 import { validateCatalog, pickCatalog } from '../lib/catalog.js';
 import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, shiftToWorkday, daysUntil } from '../lib/calendar.js';
 import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
+import { isLoadingUrl, addLoading, outageKind, recordOutage, recordTabs } from '../lib/extras.js';
 
 const catalogJson = JSON.parse(readFileSync(new URL('../catalog.json', import.meta.url)));
 const catalog = validateCatalog(catalogJson);
@@ -87,7 +88,9 @@ test('descuenta el rato de inactividad sin dejar negativos', () => {
 test('migra los datos de la versión anterior sin perder nada', () => {
   const v1 = { v: 1, days: { '2026-10-28': { aeat: HOUR } }, hours: { aeat: new Array(24).fill(0) }, longestRun: { game: 'aeat', ms: HOUR, day: '2026-10-28' }, achievements: { clave: 1 }, firstPlayed: {}, lastPlayed: {} };
   const d = migrate(v1);
-  assert.equal(d.v, 2);
+  assert.equal(d.v, 3);
+  assert.deepEqual(d.loading, {});
+  assert.deepEqual(d.tabs, { all: null, byGame: {} });
   assert.equal(d.days['2026-10-28'].aeat, HOUR);
   assert.deepEqual(d.slots, {});
   assert.equal(d.bestRuns.aeat, HOUR);
@@ -176,6 +179,52 @@ test('recompensas y perfil', () => {
   assert.deepEqual(p.showcase, ['clave', 'noctambulo']);
   assert.ok(titleOptions(catalog, ctx).some((o) => o.id === 'rank:3'));
   for (const r of catalog.rewards) if (r.unlock.achievement) assert.ok(catalog.achievements.some((a) => a.id === r.unlock.achievement), r.id);
+});
+
+test('pantallas de carga (Cl@ve)', () => {
+  assert.ok(isLoadingUrl('https://pasarela.clave.gob.es/Proxy2/ServiceProvider', catalog.loading));
+  assert.ok(isLoadingUrl('https://se-pasarela.clave.gob.es/x', catalog.loading));
+  assert.ok(!isLoadingUrl('https://sede.agenciatributaria.gob.es/', catalog.loading));
+  assert.ok(!isLoadingUrl('https://clave.gob.es.trampa.com/', catalog.loading));
+  const d = emptyData();
+  addLoading(d, t('2026-10-28T23:50'), t('2026-10-29T00:20')); // cruza medianoche
+  assert.equal(d.loading['2026-10-28'], 10 * MIN);
+  assert.equal(d.loading['2026-10-29'], 20 * MIN);
+  addLoading(d, t('2026-10-29T00:15'), t('2026-10-29T00:20'), -1);
+  assert.equal(d.loading['2026-10-29'], 15 * MIN);
+  // No suma al nivel ni a las horas de juego.
+  assert.deepEqual(d.days, {});
+});
+
+test('caídas de la sede: solo errores del servidor', () => {
+  assert.equal(outageKind({ statusCode: 503 }), 'HTTP 503');
+  assert.equal(outageKind({ statusCode: 404 }), null);
+  assert.equal(outageKind({ statusCode: 200 }), null);
+  assert.equal(outageKind({ error: 'net::ERR_CONNECTION_TIMED_OUT' }), 'ERR_CONNECTION_TIMED_OUT');
+  assert.equal(outageKind({ error: 'net::ERR_INTERNET_DISCONNECTED' }), null); // culpa de tu wifi, no de la sede
+  assert.equal(outageKind({ error: 'net::ERR_ABORTED' }), null);
+  const d = emptyData();
+  recordOutage(d, 'aeat', t('2026-10-20T10:00'));
+  recordOutage(d, 'aeat', t('2026-10-20T10:05'));
+  const tot = recordOutage(d, 'segsocial', t('2026-10-20T11:00'));
+  assert.deepEqual(tot, { all: 3, game: 1 });
+  const fresh = evaluate(d, catalog.achievements, t('2026-10-21T00:00')).map((a) => a.id);
+  assert.ok(fresh.includes('caida1') && fresh.includes('caida-dia'));
+  assert.ok(!fresh.includes('caida25'));
+});
+
+test('récord de pestañas: malabarista y pulpo', () => {
+  const d = emptyData();
+  assert.ok(recordTabs(d, { aeat: 3, segsocial: 2 }, 1));
+  assert.ok(!recordTabs(d, { aeat: 2 }, 2));
+  assert.ok(recordTabs(d, { dgt: 5 }, 3)); // 5 de la misma sede (aunque menos en total)
+  assert.equal(d.tabs.all.count, 5);
+  assert.equal(d.tabs.byGame.dgt.count, 5);
+  let fresh = evaluate(d, catalog.achievements).map((a) => a.id);
+  assert.ok(fresh.includes('malabarista') && !fresh.includes('pulpo'));
+  recordTabs(d, { aeat: 6, segsocial: 4 }, 4);
+  fresh = evaluate(d, catalog.achievements).map((a) => a.id);
+  assert.ok(fresh.includes('pulpo'));
 });
 
 console.log(`\n${ok} pruebas OK`);

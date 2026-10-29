@@ -14,6 +14,7 @@ import { getCatalog, refreshRemoteCatalog } from './lib/catalog.js';
 import { checkForUpdates } from './lib/updates.js';
 import { loadData, saveData, loadSettings } from './lib/store.js';
 import { showToasts } from './lib/toast.js';
+import { LOADING, addLoading, isLoadingUrl, outageKind, recordOutage, recordTabs } from './lib/extras.js';
 import { BRAND } from './config.js';
 
 const TICK = 'tick';
@@ -39,7 +40,32 @@ async function currentGame(catalog, settings, idleState) {
   if (!win?.focused) return null;
   const [tab] = await chrome.tabs.query({ active: true, windowId: win.id });
   if (!tab?.url) return null;
-  return matchGame(tab.url, enabledGames(catalog, settings));
+  const game = matchGame(tab.url, enabledGames(catalog, settings));
+  if (game) return game;
+  // No es un juego, pero ¿es una pantalla de carga (identificándote con Cl@ve)?
+  return isLoadingUrl(tab.url, catalog.loading) ? { id: LOADING, loading: true, name: catalog.loading.name } : null;
+}
+
+// Pestañas abiertas ahora mismo de cada sede, para los récords de malabarista.
+async function tabCounts(catalog, settings) {
+  const games = enabledGames(catalog, settings);
+  const counts = {};
+  for (const t of await chrome.tabs.query({})) {
+    const g = t.url && matchGame(t.url, games);
+    if (g) counts[g.id] = (counts[g.id] || 0) + 1;
+  }
+  return counts;
+}
+
+// Las pantallas de carga se apuntan aparte: no suben nivel ni temporada.
+function commitAny(data, game, start, end) {
+  if (game === LOADING) addLoading(data, start, end, 1);
+  else commitSegment(data, game, start, end);
+}
+
+function uncommitAny(data, game, start, end) {
+  if (game === LOADING) addLoading(data, start, end, -1);
+  else uncommitSegment(data, game, start, end);
 }
 
 function tick(reason, idleState) {
@@ -60,7 +86,7 @@ function tick(reason, idleState) {
     if (live) {
       const end = now - live.start > MAX_GAP ? live.start + MIN : now;
       if (end > live.start) {
-        commitSegment(data, live.game, live.start, end);
+        commitAny(data, live.game, live.start, end);
         segs.push({ game: live.game, start: live.start, end });
         changed = true;
       }
@@ -71,7 +97,7 @@ function tick(reason, idleState) {
       for (const s of segs) {
         const from = Math.max(s.start, cut);
         if (s.end > from) {
-          uncommitSegment(data, s.game, from, s.end);
+          uncommitAny(data, s.game, from, s.end);
           s.end = from;
           changed = true;
         }
@@ -80,6 +106,7 @@ function tick(reason, idleState) {
     }
 
     const game = await currentGame(catalog, settings, idleState);
+    if (recordTabs(data, await tabCounts(catalog, settings), now)) changed = true;
 
     // También se evalúa sin cambios de tiempo: un catálogo nuevo puede traer logros que ya se cumplen.
     const fresh = evaluate(data, catalog.achievements, now);
@@ -111,6 +138,12 @@ function tick(reason, idleState) {
 }
 
 async function updateBadge(data, game) {
+  if (game?.loading) {
+    await chrome.action.setBadgeBackgroundColor({ color: '#73849a' });
+    await chrome.action.setBadgeText({ text: '⏳' });
+    await chrome.action.setTitle({ title: `${BRAND.name} · En pantalla de carga (identificándote)` });
+    return;
+  }
   if (!game) {
     await chrome.action.setBadgeText({ text: '' });
     await chrome.action.setTitle({ title: BRAND.name });
@@ -203,6 +236,43 @@ async function runUpdates() {
     chrome.runtime.reload();
   }
 }
+
+// ---------- Caídas de la sede ----------
+// Se escuchan solo las cargas de página (no imágenes ni scripts) de las webs con permiso. Si la misma
+// pestaña falla varias veces seguidas en 20 segundos cuenta como una sola caída.
+
+const lastOutage = new Map(); // `${tabId}:${game}` → ts
+
+function onOutage(details) {
+  const kind = outageKind(details);
+  if (!kind || details.tabId < 0) return;
+  serial(async () => {
+    const [settings, catalog, data] = await Promise.all([loadSettings(), getCatalog(), loadData()]);
+    const game = matchGame(details.url, enabledGames(catalog, settings));
+    if (!game) return;
+    const key = `${details.tabId}:${game.id}`;
+    const now = Date.now();
+    if (now - (lastOutage.get(key) || 0) < 20_000) return;
+    lastOutage.set(key, now);
+    const totals = recordOutage(data, game.id, now);
+    const fresh = evaluate(data, catalog.achievements, now);
+    await saveData(data);
+    const items = [];
+    // Aviso de la caída solo la primera vez del día en cada sede, para no echar sal en la herida.
+    const today = data.outages[dayKey(now)][game.id];
+    if (today === 1) items.push({ id: `caida-${game.id}-${now}`, kind: 'info', emoji: '💥', label: `${game.name} se ha caído (${kind})`, name: `Caída nº ${totals.game} de esta sede`, desc: 'Respira y reintenta. Queda apuntado en tus estadísticas.' });
+    items.push(...fresh.map((a) => ({ id: `logro-${a.id}`, kind: 'ach', emoji: a.emoji, label: '¡Logro desbloqueado!', name: a.name, desc: a.desc })));
+    if (fresh.length) {
+      const { unseen = [] } = await chrome.storage.local.get('unseen');
+      await chrome.storage.local.set({ unseen: [...new Set([...unseen, ...fresh.map((a) => a.id)])] });
+    }
+    await announce(items, settings);
+  });
+}
+
+const PAGE_FILTER = { urls: chrome.runtime.getManifest().host_permissions || [], types: ['main_frame', 'sub_frame'] };
+chrome.webRequest.onCompleted.addListener(onOutage, PAGE_FILTER);
+chrome.webRequest.onErrorOccurred.addListener(onOutage, PAGE_FILTER);
 
 async function applyIdleInterval() {
   const settings = await loadSettings();

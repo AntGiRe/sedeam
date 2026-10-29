@@ -1,6 +1,7 @@
 import { HOUR, addDays, dayKey, fmtAgo, fmtDur, fmtHours, sumAll, sumRange, total } from './lib/core.js';
 import { daysUntil, seasonAt, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { allGames } from './lib/games.js';
+import { LOADING } from './lib/extras.js';
 import { applyTheme, capsule, el, fill, fmtCountdown, loadAll, paintAvatar, profileFor, updateAvailable, withLive } from './lib/view.js';
 
 const $ = (id) => document.getElementById(id);
@@ -30,7 +31,8 @@ function render() {
   $('name').textContent = profile.name;
   $('title').textContent = profile.titleText;
   fill($('status'), 
-    live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) : el('span', { class: 'status-online' }, `Nivel ${lv.level} · ${fmtHours(total(two))} en las últimas 2 semanas`),
+    live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) :
+    state.live?.game === LOADING ? el('span', { class: 'muted' }, '⏳ En pantalla de carga (identificándote)…') : el('span', { class: 'status-online' }, `Nivel ${lv.level} · ${fmtHours(total(two))} en las últimas 2 semanas`),
   );
   $('xp').style.width = `${Math.round(lv.progress * 100)}%`;
   $('xp-label').textContent = lv.nextTitle ? `Faltan ${fmtHours(lv.hoursToNext * HOUR)} para ${lv.nextTitle}` : 'Rango máximo. Hacienda te debe una placa.';

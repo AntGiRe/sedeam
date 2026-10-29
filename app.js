@@ -4,6 +4,7 @@ import {
 import { progress } from './lib/rules.js';
 import { daysUntil, seasonAt, seasonHistory, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { isUnlocked, titleOptions, unlockHint } from './lib/rewards.js';
+import { outageTotals } from './lib/extras.js';
 import { allGames, normalizeDomain } from './lib/games.js';
 import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
 import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, loadAll, paintAvatar, profileFor, updateAvailable, withLive } from './lib/view.js';
@@ -306,6 +307,7 @@ function renderGame(g) {
       el('div', { class: 'stat' }, el('div', { class: 'eyebrow' }, 'Tiempo de juego'), el('b', {}, fmtHours(s.ms))),
       el('div', { class: 'stat' }, el('div', { class: 'eyebrow' }, 'Última sesión'), el('b', {}, playing ? 'Ahora mismo' : fmtAgo(s.last))),
       el('div', { class: 'stat' }, el('div', { class: 'eyebrow' }, 'Sesión más larga'), el('b', {}, fmtDur(data.bestRuns[g.id] || 0))),
+      outageTotals(data, g.id).game ? el('div', { class: 'stat' }, el('div', { class: 'eyebrow' }, 'Caídas vistas'), el('b', {}, `💥 ${outageTotals(data, g.id).game}`)) : null,
       s.achs.length
         ? el('div', { class: 'stat' }, el('div', { class: 'eyebrow' }, 'Logros'), el('b', {}, `${s.got} / ${s.achs.length}`), el('div', { class: 'xp gold' }, el('i', { style: `width:${(s.got / s.achs.length) * 100}%` })))
         : null,
@@ -549,6 +551,29 @@ function renderRecords() {
     ['Logros', `${unlockedCount()}/${st.catalog.achievements.length}`, 'Pestaña Logros'],
   ];
   fill($('records'), ...rec.map(([k, v, sub]) => el('div', { class: 'tile' }, el('div', { class: 'eyebrow' }, k), el('div', { class: 'v' }, v), el('div', { class: 's' }, sub))));
+}
+
+// Pantallas de carga, caídas y pestañas: lo que nadie cuenta.
+function renderNomina() {
+  const now = new Date();
+  const monthStart = dayKey(new Date(now.getFullYear(), now.getMonth(), 1));
+  const loadTotal = Object.values(data.loading).reduce((a, b) => a + b, 0);
+  const loadMonth = Object.entries(data.loading).filter(([k]) => k >= monthStart).reduce((a, [, v]) => a + v, 0);
+  const out = outageTotals(data);
+  const outMonth = Object.entries(data.outages).filter(([k]) => k >= monthStart).reduce((a, [, d]) => a + total(d), 0);
+  const perGame = {};
+  for (const day of Object.values(data.outages)) for (const [g, n] of Object.entries(day)) perGame[g] = (perGame[g] || 0) + n;
+  const worst = Object.entries(perGame).sort((a, b) => b[1] - a[1])[0];
+  const tabsAll = data.tabs.all;
+  const bestGameTabs = Object.entries(data.tabs.byGame).sort((a, b) => b[1].count - a[1].count)[0];
+  const card = (ico, label, v, sub, joke) => el('div', { class: 'nm-card' }, el('div', { class: 'big-ico', 'aria-hidden': 'true' }, ico), el('div', { class: 'eyebrow' }, label), el('div', { class: 'v' }, v), el('div', { class: 's' }, sub), joke ? el('div', { class: 'joke' }, joke) : null);
+  const loadJoke = loadTotal >= 3600_000 ? `Con ese tiempo te daba para ver ${Math.floor(loadTotal / (110 * 60_000))} películas.` : loadTotal ? 'Cada vez que entras, Cl@ve te pregunta quién eres. Filosófico.' : 'Aún no has tenido que demostrar que eres tú. Disfrútalo.';
+  fill(
+    $('nomina'),
+    card('⏳', 'Pantallas de carga', fmtDur(loadTotal), `Identificándote con Cl@ve · ${fmtDur(loadMonth)} este mes`, loadJoke),
+    card('💥', 'Caídas de la sede', `${out.all}`, `${outMonth} este mes${worst ? ` · la que más: ${byId[worst[0]]?.name || worst[0]} (${worst[1]})` : ''}`, out.all ? (out.all >= 10 ? '«Servicio temporalmente no disponible» ya es tu canción favorita.' : 'Error 500: el código postal de la paciencia.') : 'Ninguna caída registrada. Sospechoso.'),
+    card('🤹', 'Récord de pestañas', tabsAll ? `${tabsAll.count}` : '—', tabsAll ? `a la vez, el ${fmtDate(tabsAll.ts)}${bestGameTabs ? ` · de una sola sede: ${bestGameTabs[1].count} (${byId[bestGameTabs[0]]?.name || bestGameTabs[0]})` : ''}` : 'Abre varias pestañas de sedes y verás', tabsAll && tabsAll.count >= 8 ? 'Tu navegador te pide un aumento de sueldo.' : null),
+  );
 }
 
 // ---------- Logros ----------
@@ -1008,6 +1033,7 @@ function render() {
     renderHeat();
     renderHours();
     renderRecords();
+    renderNomina();
   } else if (tab === 'temporada') renderSeason();
   else if (tab === 'perfil') renderProfilePage();
   else if (tab === 'logros') renderAchievements();

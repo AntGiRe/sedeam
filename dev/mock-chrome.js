@@ -32,7 +32,10 @@
   hours.aeat[23] += 40 * M;
   const now = Date.now();
   const data = {
-    v: 2, days, hours, slots,
+    v: 3, days, hours, slots,
+    loading: { [key(today)]: 7 * M, [key(new Date(today.getFullYear(), today.getMonth(), 3))]: 25 * M, '2026-04-20': 4.4 * H },
+    outages: { [key(today)]: { aeat: 2 }, '2026-10-20': { aeat: 5, segsocial: 2 }, '2026-07-20': { aeat: 3 } },
+    tabs: { all: { count: 9, ts: now - 9 * 864e5 }, byGame: { aeat: { count: 7, ts: now - 9 * 864e5 }, segsocial: { count: 3, ts: now - 20 * 864e5 } } },
     bestRuns: { aeat: 4.2 * H, segsocial: 1.4 * H, dehu: 0.5 * H },
     run: { game: 'aeat', start: now - 83 * M, last: now - 30000, ms: 83 * M },
     longestRun: { game: 'aeat', ms: 4.2 * H, day: key(new Date(today.getFullYear(), 9, 20)) },

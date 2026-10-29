@@ -150,6 +150,15 @@
     .records .tile { background: var(--surface-2); }
     .records .tile .v { font-size: 17px; }
 
+    .nomina { margin-top: 16px; }
+    .nomina-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .nm-card { background: var(--surface-2); border-radius: 10px; padding: 16px; display: grid; grid-template-columns: 48px 1fr; gap: 4px 14px; align-items: start; }
+    .nm-card .big-ico { grid-row: span 3; font-size: 36px; line-height: 1; }
+    .nm-card .v { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .nm-card .s { font-size: 12px; color: var(--muted); }
+    .nm-card .joke { grid-column: 1 / -1; margin-top: 8px; font-size: 12.5px; color: var(--text-2); font-style: italic; }
+    @media (max-width: 1000px) { .nomina-grid { grid-template-columns: 1fr; } }
+
     /* ---------- Logros ---------- */
     .ach-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
     .ach-head .big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -433,6 +442,10 @@
           <div class="card-head"><h2>Récords</h2></div>
           <div class="records" id="records"></div>
         </div>
+      </div>
+      <div class="card nomina">
+        <div class="card-head"><h2>Lo que no sale en la nómina</h2><span class="muted">No suma horas de juego. Solo dignidad.</span></div>
+        <div class="nomina-grid" id="nomina"></div>
       </div>
     </section>
 
