@@ -7,6 +7,7 @@
 
 import { MIN, commitSegment, uncommitSegment, dayKey, fmtBadge, fmtDur, levelFor, total, sumAll } from './lib/core.js';
 import { evaluate } from './lib/rules.js';
+import { resolveChallenges } from './lib/challenges.js';
 import { daysUntil, seasonAt, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { rewardContext, unlockedIds } from './lib/rewards.js';
 import { enabledGames, matchGame } from './lib/games.js';
@@ -108,11 +109,15 @@ function tick(reason, idleState) {
     const game = await currentGame(catalog, settings, idleState);
     if (recordTabs(data, await tabCounts(catalog, settings), now)) changed = true;
 
+    // Retos antes que logros: completar un reto puede desbloquear un logro en el mismo apunte.
+    const doneChallenges = resolveChallenges(data, catalog.challenges || [], new Date(now));
     // También se evalúa sin cambios de tiempo: un catálogo nuevo puede traer logros que ya se cumplen.
     const fresh = evaluate(data, catalog.achievements, now);
-    if (changed || fresh.length) {
+    const pause = await checkBreak(game, settings, now);
+    if (changed || fresh.length || doneChallenges.length) {
       await saveData(data);
-      const items = fresh.map((a) => ({ id: `logro-${a.id}`, kind: 'ach', emoji: a.emoji, label: '¡Logro desbloqueado!', name: a.name, desc: a.desc }));
+      const items = doneChallenges.map((c) => ({ id: `reto-${c.week.id}-${c.id}`, kind: 'reward', emoji: c.emoji, label: '¡Reto semanal completado!', name: c.name, desc: `+${c.xp} h de pase de temporada` }));
+      items.push(...fresh.map((a) => ({ id: `logro-${a.id}`, kind: 'ach', emoji: a.emoji, label: '¡Logro desbloqueado!', name: a.name, desc: a.desc })));
       const lv = levelFor(total(sumAll(data)), catalog.levels);
       if (lv.level > levelBefore) items.push({ id: `nivel-${lv.level}`, kind: 'level', emoji: '⬆️', label: `¡Nivel ${lv.level}!`, name: lv.title, desc: 'Has subido de rango. Sigue así (o no).' });
       if (season) {
@@ -132,9 +137,49 @@ function tick(reason, idleState) {
       await announce(items, settings);
     }
 
+    if (pause) await announce([pause], { ...settings, notifications: true });
+
     await chrome.storage.session.set({ live: game ? { game: game.id, start: now } : null, recent: segs });
     await updateBadge(data, game);
   });
+}
+
+// ---------- Pausa activa ----------
+// Cuenta el rato seguido en sedes (pausas de menos de 5 minutos no lo cortan) y avisa cada N minutos.
+
+const BREAK_TIPS = [
+  'Levántate, estira la espalda y mira a lo lejos 20 segundos. El 303 seguirá ahí.',
+  'Bebe agua. Hacienda no te va a recordar que te hidrates.',
+  'Rueda los hombros hacia atrás diez veces. Tu contractura te lo agradecerá.',
+  'Da una vuelta hasta la cafetera. Es por tu salud, no por el café.',
+  'Cierra los ojos un minuto. Si al abrirlos la sede sigue cargando, has ganado tiempo.',
+  'Estira las muñecas: tantos clics en «Siguiente» no son normales.',
+];
+
+async function checkBreak(game, settings, now) {
+  const { focus } = await chrome.storage.session.get('focus');
+  let f = focus && now - focus.last <= 5 * MIN ? focus : null;
+  if (!game) {
+    await chrome.storage.session.set({ focus: f });
+    return null;
+  }
+  if (!f) f = { start: now, last: now, reminded: 0 };
+  f.last = now;
+  let item = null;
+  const every = settings.breakMinutes * MIN;
+  if (settings.breakReminder && now - f.start >= every * (f.reminded + 1)) {
+    f.reminded++;
+    item = {
+      id: `pausa-${now}`,
+      kind: 'info',
+      emoji: '🧘',
+      label: 'Pausa activa',
+      name: `Llevas ${fmtDur(now - f.start)} seguidos en sedes`,
+      desc: BREAK_TIPS[Math.floor(Math.random() * BREAK_TIPS.length)],
+    };
+  }
+  await chrome.storage.session.set({ focus: f });
+  return item;
 }
 
 async function updateBadge(data, game) {
@@ -318,7 +363,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 chrome.notifications.onClicked.addListener((id) => {
   const hash = id.startsWith('logro') ? '#logros'
     : id.startsWith('recompensa') ? '#perfil'
-      : id.startsWith('plazo') || id.startsWith('temporada') ? '#temporada'
+      : id.startsWith('plazo') || id.startsWith('temporada') || id.startsWith('reto') ? '#temporada'
         : id.startsWith('nivel') ? '#estadisticas' : '#biblioteca';
   chrome.tabs.create({ url: chrome.runtime.getURL('app.html' + hash) });
   chrome.notifications.clear(id);

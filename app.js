@@ -5,9 +5,10 @@ import { progress } from './lib/rules.js';
 import { daysUntil, seasonAt, seasonHistory, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { isUnlocked, titleOptions, unlockHint } from './lib/rewards.js';
 import { outageTotals } from './lib/extras.js';
+import { challengeState, pickChallenges, weekOf } from './lib/challenges.js';
 import { allGames, normalizeDomain } from './lib/games.js';
 import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
-import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, loadAll, paintAvatar, profileFor, updateAvailable, withLive } from './lib/view.js';
+import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, loadAll, paintAvatar, profileFor, shortcutsOf, updateAvailable, withLive } from './lib/view.js';
 import { showToasts } from './lib/toast.js';
 import { BRAND, REMOTE_ENABLED, REPO, releasesUrl } from './config.js';
 
@@ -246,8 +247,12 @@ function renderLibraryHome() {
       : null,
   );
 
+  const shortcuts = shortcutsOf(st);
   fill($('lib-main'), 
     promo,
+    shortcuts.length
+      ? el('div', {}, el('div', { class: 'h-row' }, el('h2', {}, 'Accesos directos'), el('a', { class: 'muted', href: '#ajustes' }, 'Editar')), el('div', { class: 'launch' }, shortcuts.map((sc) => el('a', { href: sc.url, target: '_blank', rel: 'noopener', title: sc.url }, el('span', { 'aria-hidden': 'true' }, sc.emoji || '🔗'), sc.name))))
+      : null,
     recent.length
       ? el('div', {}, el('div', { class: 'h-row' }, el('h2', {}, 'Jugados recientemente')), el('div', { class: 'shelf recent' }, recent.map((g) => shelfItem(g, { recent: true }))))
       : el('div', { class: 'card', style: 'margin-bottom:32px' }, el('h2', { style: 'font-size:16px;margin-bottom:4px' }, `Bienvenido a ${BRAND.name}`), el('p', { class: 'secondary', style: 'margin:0' }, 'Abre cualquier sede (Agencia Tributaria, Seguridad Social…) y el contador empezará solo. Tus horas aparecerán aquí.')),
@@ -655,12 +660,14 @@ function renderSeason() {
       {},
       el('div', { class: 'eyebrow', style: 'color:rgba(255,255,255,.7)' }, `Temporada ${season.label}`),
       el('h1', {}, season.name),
-      el('div', { class: 'meta' }, `${fmtD(season.start)} – ${fmtD(season.end)} · termina ${fmtCountdown(left)} · ${fmtHours(sp.ms)} jugadas`),
+      el('div', { class: 'meta' }, `${fmtD(season.start)} – ${fmtD(season.end)} · termina ${fmtCountdown(left)} · ${fmtHours(sp.playedMs)} jugadas${sp.bonusMs ? ` + ${fmtHours(sp.bonusMs)} de retos` : ''}`),
       el('div', { class: 'xp' }, el('i', { style: `width:${Math.round(sp.progress * 100)}%` })),
       el('div', { class: 'meta', style: 'margin-top:6px;font-size:12px' }, sp.maxed ? '¡Pase completado! Eres leyenda de esta temporada.' : `${fmtDur(sp.msToNext)} para el nivel ${sp.tier + 1} · ${cfg.hoursPerTier} h por nivel`),
     ),
     el('div', { class: 'tier-ring', style: `--p:${(sp.tier / cfg.tiers) * 100}` }, el('div', {}, el('span', {}, 'NIVEL'), el('b', {}, String(sp.tier)), el('span', {}, `DE ${cfg.tiers}`))),
   );
+
+  renderChallenges();
 
   // Pista del pase: un hueco por nivel, con su recompensa si la tiene.
   const byTier = {};
@@ -717,6 +724,34 @@ function renderSeason() {
           ),
         )
       : el('div', { class: 'empty' }, 'Tu primera temporada empieza en cuanto entres en una sede.'),
+  );
+}
+
+function renderChallenges() {
+  const now = new Date();
+  const week = weekOf(now);
+  const chs = pickChallenges(st.catalog.challenges || [], week.id);
+  const completed = Object.values(data.challenges || {}).reduce((a, w) => a + Object.keys(w).length, 0);
+  const left = daysUntil(week.end, now);
+  $('ch-sub').textContent = `Semana ${week.id.split('-S')[1]} · ${left <= 0 ? 'último día' : `quedan ${left + 1} días`} · ${completed} retos completados en total`;
+  fill(
+    $('challenges'),
+    chs.length
+      ? chs.map((ch) => {
+          const s = challengeState(ch, data, week, now);
+          if (!s) return null;
+          const val = s.unit === 'ms' ? `${fmtDur(s.value)} / ${fmtDur(s.target)}` : s.unit === 'bool' ? '' : `${Math.min(s.value, s.target)} / ${s.target}`;
+          const tag = s.done ? '✓ Completado' : s.failed ? '✗ Fallido' : ch.mode === 'max' ? `Se resuelve el domingo · ${s.daysActive}/${ch.minDays} días` : 'En curso';
+          return el(
+            'div',
+            { class: `ch${s.done ? ' done' : ''}${s.failed ? ' failed' : ''}` },
+            el('div', { class: 'top' }, el('span', { class: 'e', 'aria-hidden': 'true' }, ch.emoji), el('div', {}, el('div', { class: 'nm' }, ch.name), el('div', { class: 'xpv' }, `+${ch.xp} h de pase${ch.mode === 'max' ? ' · reto de contención' : ''}`))),
+            el('div', { class: 'd' }, ch.desc),
+            s.unit !== 'bool' ? el('div', { class: `xp${ch.mode === 'max' ? ' warn' : ''}` }, el('i', { style: `width:${Math.round((s.done && ch.mode !== 'max' ? 1 : s.pct) * 100)}%` })) : null,
+            el('div', { class: 'foot' }, el('span', {}, ch.mode === 'max' ? `Llevas ${val.split(' / ')[0]} (máx. ${val.split(' / ')[1]})` : val), el('span', { class: 'tag' }, tag)),
+          );
+        })
+      : el('div', { class: 'empty' }, 'Este catálogo no trae retos.'),
   );
 }
 
@@ -889,6 +924,10 @@ function renderSettings() {
   $('sound').checked = !!st.settings.sound;
   $('sysnotif').checked = !!st.settings.systemNotifications;
   for (const id of ['toast-page', 'sound', 'sysnotif']) $(id).disabled = !st.settings.notifications;
+  $('break-on').checked = !!st.settings.breakReminder;
+  $('break-min').value = String(st.settings.breakMinutes);
+  $('break-min').disabled = !st.settings.breakReminder;
+  renderShortcutsSettings();
   $('dl-alerts').checked = !!st.settings.deadlineAlerts;
   $('dl-days').value = String(st.settings.deadlineDays);
   $('dl-days').disabled = !st.settings.deadlineAlerts;
@@ -924,6 +963,37 @@ function renderSettings() {
   );
 }
 
+const saveShortcuts = (list) => updateSettings({ shortcuts: list });
+
+function renderShortcutsSettings() {
+  const list = shortcutsOf(st);
+  const move = (i, d) => {
+    const next = [...list];
+    [next[i], next[i + d]] = [next[i + d], next[i]];
+    saveShortcuts(next);
+  };
+  fill(
+    $('sc-list'),
+    list.length
+      ? list.map((sc, i) =>
+          el(
+            'div',
+            { class: 'sc-row' },
+            el('span', { class: 'e', 'aria-hidden': 'true' }, sc.emoji || '🔗'),
+            el('div', { style: 'min-width:0' }, el('div', {}, sc.name), el('div', { class: 'u' }, sc.url)),
+            el(
+              'div',
+              { class: 'btns' },
+              el('button', { type: 'button', class: 'ghost', disabled: i === 0, 'aria-label': `Subir ${sc.name}`, onclick: () => move(i, -1) }, '↑'),
+              el('button', { type: 'button', class: 'ghost', disabled: i === list.length - 1, 'aria-label': `Bajar ${sc.name}`, onclick: () => move(i, 1) }, '↓'),
+              el('button', { type: 'button', class: 'danger', 'aria-label': `Quitar ${sc.name}`, onclick: () => saveShortcuts(list.filter((x) => x.id !== sc.id)) }, 'Quitar'),
+            ),
+          ),
+        )
+      : el('p', { class: 'muted', style: 'margin:0' }, 'No tienes accesos directos.'),
+  );
+}
+
 function download(name, text, type) {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = el('a', { href: url, download: name });
@@ -947,6 +1017,23 @@ function wireSettings() {
   $('toast-page').addEventListener('change', (e) => updateSettings({ toastInPage: e.target.checked }));
   $('sound').addEventListener('change', (e) => updateSettings({ sound: e.target.checked }));
   $('sysnotif').addEventListener('change', (e) => updateSettings({ systemNotifications: e.target.checked }));
+  $('break-on').addEventListener('change', (e) => updateSettings({ breakReminder: e.target.checked }));
+  $('break-min').addEventListener('change', (e) => updateSettings({ breakMinutes: Number(e.target.value) }));
+  $('sc-add').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const url = $('sc-url').value.trim();
+    if (!/^https:\/\/[^\s]+$/.test(url)) {
+      $('sc-url').setCustomValidity('Pon una dirección que empiece por https://');
+      $('sc-url').reportValidity();
+      return;
+    }
+    saveShortcuts([...shortcutsOf(st), { id: `sc-${Date.now().toString(36)}`, name: $('sc-name').value.trim(), url, emoji: $('sc-emoji').value.trim() || '🔗' }]);
+    e.target.reset();
+  });
+  $('sc-url').addEventListener('input', (e) => e.target.setCustomValidity(''));
+  $('sc-reset').addEventListener('click', () => {
+    if (confirm('¿Volver a los accesos directos de serie? Se quitarán los que hayas añadido.')) updateSettings({ shortcuts: null });
+  });
   $('dl-alerts').addEventListener('change', (e) => updateSettings({ deadlineAlerts: e.target.checked }));
   $('dl-days').addEventListener('change', (e) => updateSettings({ deadlineDays: Number(e.target.value) }));
   $('test-toast').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}));

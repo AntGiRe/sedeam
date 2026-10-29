@@ -25,6 +25,8 @@
 }
 
 * { box-sizing: border-box; }
+/* Que ningún display de componente (botones, tarjetas…) pise el atributo hidden. */
+[hidden] { display: none !important; }
 
 body {
   margin: 0;

@@ -2,7 +2,10 @@ import { HOUR, addDays, dayKey, fmtAgo, fmtDur, fmtHours, sumAll, sumRange, tota
 import { daysUntil, seasonAt, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { allGames } from './lib/games.js';
 import { LOADING } from './lib/extras.js';
-import { applyTheme, capsule, el, fill, fmtCountdown, loadAll, paintAvatar, profileFor, updateAvailable, withLive } from './lib/view.js';
+import { applyTheme, capsule, el, fill, fmtCountdown, loadAll, paintAvatar, profileFor, shortcutsOf, updateAvailable, withLive } from './lib/view.js';
+import { challengeState, pickChallenges, weekOf } from './lib/challenges.js';
+import { matchGame } from './lib/games.js';
+import { saveSettings } from './lib/store.js';
 
 const $ = (id) => document.getElementById(id);
 let state = null;
@@ -55,7 +58,10 @@ function render() {
     $('season-name').textContent = `${season.emoji} ${season.label}`;
     $('season-tier').textContent = `Nv. ${sp.tier}/${catalog.seasons.tiers}`;
     $('season-bar').style.width = `${Math.round(sp.progress * 100)}%`;
-    $('season-sub').textContent = `Acaba ${fmtCountdown(daysUntil(season.end, new Date(now)))}`;
+    const week = weekOf(new Date(now));
+    const chs = pickChallenges(catalog.challenges || [], week.id);
+    const done = chs.filter((c) => challengeState(c, data, week, new Date(now))?.done).length;
+    $('season-sub').textContent = `${chs.length ? `Retos ${done}/${chs.length} · ` : ''}acaba ${fmtCountdown(daysUntil(season.end, new Date(now)))}`;
   }
   const next = upcomingDeadlines(catalog.deadlines, new Date(now), { limit: 1 })[0];
   $('deadline').hidden = !next;
@@ -104,6 +110,57 @@ async function refresh() {
   render();
 }
 
+// ---------- Lanzador ----------
+
+let activeTab = null;
+
+function renderLauncher() {
+  const list = shortcutsOf(state);
+  fill(
+    $('launcher'),
+    list.length
+      ? list.map((sc) =>
+          el(
+            'button',
+            {
+              title: sc.url,
+              onclick: () => {
+                chrome.tabs.create({ url: sc.url });
+                window.close();
+              },
+            },
+            el('span', { 'aria-hidden': 'true' }, sc.emoji || '🔗'),
+            el('span', { class: 'n' }, sc.name),
+          ),
+        )
+      : el('div', { class: 'empty' }, 'Sin accesos directos. Abre un trámite y pulsa «＋ Esta página».'),
+  );
+  const url = activeTab?.url || '';
+  $('add-page').hidden = !/^https:\/\//.test(url) || list.some((sc) => sc.url === url);
+}
+
+async function addShortcut(name) {
+  const list = [...shortcutsOf(state)];
+  const game = matchGame(activeTab.url, state.catalog.games);
+  list.push({ id: `sc-${Date.now().toString(36)}`, name: name.trim().slice(0, 28), url: activeTab.url, emoji: game?.emoji || '⭐' });
+  state.settings = { ...state.settings, shortcuts: list };
+  await saveSettings(state.settings);
+  renderLauncher();
+}
+
+$('add-page').addEventListener('click', () => {
+  $('add-form').hidden = false;
+  $('add-name').value = (activeTab.title || 'Trámite').replace(/\s*[-|–·].*$/, '').slice(0, 28);
+  $('add-name').select();
+});
+$('add-cancel').addEventListener('click', () => ($('add-form').hidden = true));
+$('add-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!$('add-name').value.trim()) return;
+  await addShortcut($('add-name').value);
+  $('add-form').hidden = true;
+});
+
 // Logros desbloqueados desde la última vez que miraste: se enseñan aquí una vez y se dan por vistos.
 async function showFresh() {
   const [{ unseen = [] }, { catalog }] = await Promise.all([chrome.storage.local.get('unseen'), state ? Promise.resolve(state) : loadAll()]);
@@ -118,6 +175,13 @@ async function showFresh() {
 }
 
 // Pide un apunte al service worker para que las cifras estén al día y luego refresca cada segundo.
-chrome.runtime.sendMessage({ type: 'flush' }).catch(() => {}).finally(() => refresh().then(showFresh));
+chrome.tabs.query({ active: true, currentWindow: true }).then(([t]) => {
+  activeTab = t || null;
+  if (state) renderLauncher();
+});
+chrome.runtime.sendMessage({ type: 'flush' }).catch(() => {}).finally(() => refresh().then(() => {
+  renderLauncher();
+  showFresh();
+}));
 setInterval(() => state && render(), 1000);
 setInterval(refresh, 15000);

@@ -240,6 +240,30 @@
     .srow .medal { font-size: 20px; width: 24px; text-align: center; }
     .srow .tierv { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+    .challenges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .ch { border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); padding: 14px; display: grid; gap: 8px; align-content: start; }
+    .ch .top { display: flex; gap: 10px; align-items: center; }
+    .ch .e { font-size: 28px; }
+    .ch .nm { font-weight: 700; }
+    .ch .xpv { font-size: 11px; color: var(--accent); font-weight: 700; }
+    .ch .d { font-size: 12px; color: var(--text-2); }
+    .ch .foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .ch .tag { font-weight: 700; }
+    .ch.done { border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: color-mix(in srgb, var(--gold) 8%, var(--surface-2)); }
+    .ch.done .tag { color: var(--gold); }
+    .ch.failed { opacity: .55; }
+    .ch.failed .tag { color: var(--danger); }
+    .ch .xp.warn > i { background: var(--danger); }
+    .launch { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+    .launch a { display: inline-flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); text-decoration: none; color: inherit; font-weight: 600; }
+    .launch a:hover { border-color: var(--border-strong); background: var(--surface-2); }
+    .sc-list { display: grid; gap: 6px; }
+    .sc-row { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 8px; background: var(--surface-2); }
+    .sc-row .e { font-size: 18px; text-align: center; }
+    .sc-row .u { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+    .sc-row .btns { display: flex; gap: 4px; }
+    .sc-row .btns button { padding: 4px 8px; }
+
     /* ---------- Perfil ---------- */
     .profile-hero { display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
       background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 22%, var(--surface)), var(--surface) 65%); }
@@ -304,7 +328,7 @@
       .hero .bg-art { opacity: .5; }
       .season-hero { grid-template-columns: 1fr; }
       .season-hero .big-emoji { right: 10px; opacity: .35; }
-      .showcase { grid-template-columns: 1fr; }
+      .showcase, .challenges { grid-template-columns: 1fr; }
       .profile-hero .badges { margin-left: 0; justify-content: flex-start; }
     }
     @media (max-width: 640px) {
@@ -360,6 +384,10 @@
     <!-- TEMPORADA -->
     <section class="view" id="temporada" hidden>
       <div class="season-hero" id="season-hero"></div>
+      <div class="card">
+        <div class="card-head"><h2>Retos de la semana</h2><span class="muted" id="ch-sub"></span></div>
+        <div class="challenges" id="challenges"></div>
+      </div>
       <div class="card">
         <div class="card-head"><h2>Pase de temporada</h2><span class="muted" id="pass-sub"></span></div>
         <div class="pass" id="pass"></div>
@@ -499,11 +527,27 @@
         <div class="field" style="margin-top:10px"><input type="checkbox" id="dl-alerts"><label for="dl-alerts">Recordarme los plazos</label>
           <select id="dl-days" aria-label="Con cuánta antelación"><option value="1">la víspera</option><option value="3">3 días antes</option><option value="7">7 días antes</option></select>
           <span class="muted">(y también la víspera y el mismo día)</span></div>
+        <div class="field"><input type="checkbox" id="break-on"><label for="break-on">Pausa activa: avisarme tras</label>
+          <select id="break-min" aria-label="Minutos seguidos"><option value="60">1 hora</option><option value="90">1 h 30 min</option><option value="120">2 horas</option></select>
+          <span class="muted">seguidos en sedes</span></div>
         <div class="actions" style="margin-top:12px">
           <button class="primary" id="test-toast">Probar aviso</button>
           <button id="test-system">Probar notificación del sistema</button>
         </div>
         <p class="help">¿La notificación del sistema no aparece? En el Mac, abre <b>Ajustes del Sistema → Notificaciones → Google Chrome</b> y activa <b>Permitir notificaciones</b>. Revisa también que no tengas activado un modo de concentración. La tarjeta dentro de la sede no depende de esto.</p>
+      </div>
+
+      <div class="card">
+        <h3>Accesos directos</h3>
+        <p class="help" style="margin:0 0 10px">Salen en el popup para abrir tus trámites de un clic. La forma más fácil de añadir uno: abre el trámite y pulsa «＋ Esta página» en el popup.</p>
+        <div class="sc-list" id="sc-list"></div>
+        <form class="add sc-add" id="sc-add">
+          <input id="sc-emoji" placeholder="🔗" maxlength="4" aria-label="Emoji">
+          <input id="sc-name" placeholder="Nombre (p. ej. Modelo 303)" maxlength="28" required aria-label="Nombre">
+          <input id="sc-url" placeholder="https://sede.agenciatributaria.gob.es/…" required aria-label="Dirección">
+          <button class="primary" type="submit">Añadir</button>
+        </form>
+        <div class="actions" style="margin-top:8px"><button class="ghost" id="sc-reset" type="button">Volver a los de serie</button></div>
       </div>
 
       <div class="card">

@@ -7,8 +7,9 @@ import {
 import { evaluate, progress } from '../lib/rules.js';
 import { matchGame, normalizeDomain, allGames } from '../lib/games.js';
 import { validateCatalog, pickCatalog } from '../lib/catalog.js';
-import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, shiftToWorkday, daysUntil } from '../lib/calendar.js';
+import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, seasonProgress, shiftToWorkday, daysUntil } from '../lib/calendar.js';
 import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
+import { weekOf, pickChallenges, challengeState, resolveChallenges } from '../lib/challenges.js';
 import { isLoadingUrl, addLoading, outageKind, outageTarget, recordOutage, recordTabs } from '../lib/extras.js';
 
 const catalogJson = JSON.parse(readFileSync(new URL('../catalog.json', import.meta.url)));
@@ -88,7 +89,8 @@ test('descuenta el rato de inactividad sin dejar negativos', () => {
 test('migra los datos de la versión anterior sin perder nada', () => {
   const v1 = { v: 1, days: { '2026-10-28': { aeat: HOUR } }, hours: { aeat: new Array(24).fill(0) }, longestRun: { game: 'aeat', ms: HOUR, day: '2026-10-28' }, achievements: { clave: 1 }, firstPlayed: {}, lastPlayed: {} };
   const d = migrate(v1);
-  assert.equal(d.v, 3);
+  assert.equal(d.v, 4);
+  assert.deepEqual(d.challenges, {});
   assert.deepEqual(d.loading, {});
   assert.deepEqual(d.tabs, { all: null, byGame: {} });
   assert.equal(d.days['2026-10-28'].aeat, HOUR);
@@ -255,6 +257,58 @@ test('cada sede del catálogo tiene permiso para avisos y caídas', () => {
   for (const g of catalog.games) for (const dom of g.domains) {
     assert.ok(manifest.host_permissions.some((h) => { const m = h.match(/^https:\/\/(\*\.)?([^/]+)\//); return m && (dom === m[2] || (m[1] && dom.endsWith('.' + m[2]))); }), `sin permiso: ${dom}`);
   }
+});
+
+test('retos: semana, selección estable y reglas del catálogo', () => {
+  const w = weekOf(new Date(2026, 9, 29)); // jueves
+  assert.equal(w.id, '2026-S44');
+  assert.equal(w.from, '2026-10-26');
+  assert.equal(w.to, '2026-11-01');
+  assert.equal(weekOf(new Date(2027, 0, 1)).id, '2026-S53'); // 1 ene 2027 cae en la semana 53 de 2026
+  const a = pickChallenges(catalog.challenges, w.id).map((c) => c.id);
+  assert.deepEqual(a, pickChallenges(catalog.challenges, w.id).map((c) => c.id)); // siempre los mismos
+  assert.equal(a.length, 3);
+  assert.equal(new Set(a).size, 3);
+  // Las semanas cambian de retos (al menos alguna de las próximas 4 es distinta).
+  assert.ok([1, 2, 3, 4].some((k) => pickChallenges(catalog.challenges, weekOf(new Date(2026, 9, 29 + 7 * k)).id).map((c) => c.id).join() !== a.join()));
+  // Nunca dos de contención (modo max) a la vez.
+  for (let k = 0; k < 60; k++) assert.ok(pickChallenges(catalog.challenges, `x${k}`).filter((c) => c.mode === 'max').length <= 1);
+  for (const ch of catalog.challenges) assert.ok(challengeState(ch, emptyData(), w, new Date(2026, 9, 29)), ch.id);
+});
+
+test('retos: se completan, dan puntos de temporada y los de contención esperan al domingo', () => {
+  const d = emptyData();
+  const now = new Date(2026, 9, 29, 18, 0);
+  const w = weekOf(now);
+  const intensiva = catalog.challenges.find((c) => c.id === 'intensiva');
+  const sinDgt = catalog.challenges.find((c) => c.id === 'sin-dgt');
+  commitSegment(d, 'aeat', t('2026-10-27T08:00'), t('2026-10-27T14:30')); // 6,5 h el martes
+  assert.ok(challengeState(intensiva, d, w, now).done);
+  // Lo de la semana anterior no cuenta para esta.
+  const d2 = emptyData();
+  commitSegment(d2, 'aeat', t('2026-10-20T08:00'), t('2026-10-20T15:00'));
+  assert.ok(!challengeState(intensiva, d2, w, now).done);
+  // Contención: mientras dura la semana está pendiente; al acabar, se gana si jugaste 3 días sin pisar la DGT.
+  for (const day of ['2026-10-26', '2026-10-28']) commitSegment(d, 'aeat', t(day + 'T09:00'), t(day + 'T10:00'));
+  let st = challengeState(sinDgt, d, w, now);
+  assert.ok(st.pending && !st.failed);
+  st = challengeState(sinDgt, d, w, new Date(2026, 10, 2, 10, 0));
+  assert.ok(!st.failed);
+  commitSegment(d, 'dgt', t('2026-10-30T09:00'), t('2026-10-30T09:20'));
+  assert.ok(challengeState(sinDgt, d, w, new Date(2026, 10, 2)).failed);
+  // resolveChallenges apunta los completados una sola vez y suben el pase.
+  const d3 = emptyData();
+  commitSegment(d3, 'aeat', t('2026-10-27T08:00'), t('2026-10-27T14:30'));
+  const pool = [intensiva];
+  const fresh = resolveChallenges(d3, pool, now);
+  assert.deepEqual(fresh.map((c) => c.id), ['intensiva']);
+  assert.equal(resolveChallenges(d3, pool, now).length, 0);
+  const season = seasonAt(catalog.seasons, now);
+  const sp = seasonProgress(d3, catalog.seasons, season);
+  assert.equal(sp.bonusMs, 3 * HOUR);
+  assert.equal(sp.playedMs, 6.5 * HOUR);
+  assert.equal(sp.tier, 2); // 9,5 h / 4 h por nivel
+  assert.ok(evaluate(d3, catalog.achievements).some((a) => a.id === 'reto1'));
 });
 
 console.log(`\n${ok} pruebas OK`);

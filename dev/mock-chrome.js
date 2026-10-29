@@ -32,7 +32,8 @@
   hours.aeat[23] += 40 * M;
   const now = Date.now();
   const data = {
-    v: 3, days, hours, slots,
+    v: 4, days, hours, slots,
+    challenges: { '2026-S43': { intensiva: { ts: now - 5 * 864e5, xp: 3 }, constante: { ts: now - 4 * 864e5, xp: 2 } }, '2026-S42': { 'aeat-sem': { ts: now - 12 * 864e5, xp: 3 } } },
     loading: { [key(today)]: 7 * M, [key(new Date(today.getFullYear(), today.getMonth(), 3))]: 25 * M, '2026-04-20': 4.4 * H },
     outages: { [key(today)]: { aeat: 2, clave: 1 }, '2026-10-20': { aeat: 5, segsocial: 2, redsara: 2, clave: 2 }, '2026-07-20': { aeat: 3 } },
     tabs: { all: { count: 9, ts: now - 9 * 864e5 }, byGame: { aeat: { count: 7, ts: now - 9 * 864e5 }, segsocial: { count: 3, ts: now - 20 * 864e5 } } },
@@ -55,6 +56,9 @@
       onChanged: { addListener() {} },
     },
     runtime: { sendMessage: async () => true, getURL: (p) => '../' + p, getManifest: () => ({ version: '0.2.0' }) },
-    tabs: { create: ({ url }) => (location.href = url) },
+    tabs: {
+      create: ({ url }) => console.log('abrir', url),
+      query: async () => [{ url: 'https://sede.agenciatributaria.gob.es/Sede/iva/modelo-303.html', title: 'Modelo 303 - Agencia Tributaria' }],
+    },
   };
 })();

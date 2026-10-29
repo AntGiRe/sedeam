@@ -1,6 +1,6 @@
 {
-  "catalogVersion": 4,
-  "minAppVersion": "0.5.0",
+  "catalogVersion": 5,
+  "minAppVersion": "0.6.0",
   "updated": "2026-10-29",
   "games": [
     {
@@ -825,9 +825,44 @@
         "type": "outageSites",
         "count": 3
       }
+    },
+    {
+      "id": "reto1",
+      "emoji": "🎯",
+      "name": "Primer reto",
+      "desc": "Completa tu primer reto semanal.",
+      "rule": {
+        "type": "challenges",
+        "count": 1
+      }
+    },
+    {
+      "id": "reto25",
+      "emoji": "🏅",
+      "name": "Retador profesional",
+      "desc": "Completa 25 retos semanales.",
+      "rule": {
+        "type": "challenges",
+        "count": 25
+      }
+    },
+    {
+      "id": "reto-pleno",
+      "emoji": "💯",
+      "name": "Pleno semanal",
+      "desc": "Completa los 3 retos de una misma semana.",
+      "rule": {
+        "type": "challengeWeek",
+        "count": 3
+      }
     }
   ],
   "news": [
+    {
+      "date": "2026-10-29",
+      "title": "Retos semanales, lanzador y pausa activa",
+      "body": "Cada lunes, 3 retos nuevos que dan puntos de temporada. Accesos directos a tus trámites desde el popup (añade la página que tengas abierta con un clic) y un recordatorio para estirar las piernas."
+    },
     {
       "date": "2026-10-29",
       "title": "Caídas de Cl@ve, Red SARA y FNMT",
@@ -1302,6 +1337,264 @@
         "fnmt.es",
         "cert.fnmt.es"
       ]
+    }
+  ],
+  "challenges": [
+    {
+      "id": "constante",
+      "emoji": "📆",
+      "name": "Semana constante",
+      "desc": "Entra en alguna sede 5 días distintos.",
+      "xp": 2,
+      "rule": {
+        "type": "daysPlayed",
+        "days": 5
+      }
+    },
+    {
+      "id": "intensiva",
+      "emoji": "⚡",
+      "name": "Jornada intensiva",
+      "desc": "Un día con 6 horas en sedes.",
+      "xp": 3,
+      "rule": {
+        "type": "time",
+        "agg": "day",
+        "target": {
+          "hours": 6
+        }
+      }
+    },
+    {
+      "id": "maraton-sem",
+      "emoji": "🏃",
+      "name": "Maratón semanal",
+      "desc": "15 horas en sedes esta semana.",
+      "xp": 4,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "target": {
+          "hours": 15
+        }
+      }
+    },
+    {
+      "id": "madrugon",
+      "emoji": "🌅",
+      "name": "Madrugón",
+      "desc": "30 minutos en sedes antes de las 9:00.",
+      "xp": 2,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "hours": [
+          5,
+          9
+        ],
+        "target": {
+          "minutes": 30
+        }
+      }
+    },
+    {
+      "id": "turismo",
+      "emoji": "🧳",
+      "name": "Turismo administrativo",
+      "desc": "Visita 4 sedes distintas (5 min en cada una).",
+      "xp": 2,
+      "rule": {
+        "type": "gamesPlayed",
+        "count": 4,
+        "minutes": 5
+      }
+    },
+    {
+      "id": "doble-sem",
+      "emoji": "🪟",
+      "name": "Doble ventanilla",
+      "desc": "AEAT y Seguridad Social el mismo día.",
+      "xp": 2,
+      "rule": {
+        "type": "sameDay",
+        "games": [
+          "aeat",
+          "segsocial"
+        ],
+        "minutes": 10
+      }
+    },
+    {
+      "id": "boe-sem",
+      "emoji": "📰",
+      "name": "Lectura obligatoria",
+      "desc": "30 minutos en el BOE.",
+      "xp": 2,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "boe",
+        "target": {
+          "minutes": 30
+        }
+      }
+    },
+    {
+      "id": "buzon",
+      "emoji": "📬",
+      "name": "Buzón al día",
+      "desc": "Entra en DEHú 3 días distintos.",
+      "xp": 2,
+      "rule": {
+        "type": "daysPlayed",
+        "days": 3,
+        "game": "dehu",
+        "minutes": 1
+      }
+    },
+    {
+      "id": "catastro-sem",
+      "emoji": "🗺️",
+      "name": "Explorador del Catastro",
+      "desc": "20 minutos en el Catastro.",
+      "xp": 2,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "catastro",
+        "target": {
+          "minutes": 20
+        }
+      }
+    },
+    {
+      "id": "aeat-sem",
+      "emoji": "🏛️",
+      "name": "Semana tributaria",
+      "desc": "8 horas en la Agencia Tributaria.",
+      "xp": 3,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "aeat",
+        "target": {
+          "hours": 8
+        }
+      }
+    },
+    {
+      "id": "sin-dgt",
+      "emoji": "🚫",
+      "name": "Sin pisar la DGT",
+      "desc": "Menos de 5 minutos en la DGT en toda la semana (jugando al menos 3 días).",
+      "xp": 2,
+      "mode": "max",
+      "minDays": 3,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "game": "dgt",
+        "target": {
+          "minutes": 5
+        }
+      }
+    },
+    {
+      "id": "viernes-tranquilo",
+      "emoji": "🍹",
+      "name": "Viernes tranquilo",
+      "desc": "Menos de 1 hora en sedes el viernes (jugando al menos 3 días).",
+      "xp": 2,
+      "mode": "max",
+      "minDays": 3,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "weekdays": [
+          5
+        ],
+        "target": {
+          "hours": 1
+        }
+      }
+    },
+    {
+      "id": "cero-noches",
+      "emoji": "😴",
+      "name": "Cero noches",
+      "desc": "Nada de sedes después de las 21:00 en toda la semana (jugando al menos 3 días).",
+      "xp": 3,
+      "mode": "max",
+      "minDays": 3,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "hours": [
+          21,
+          6
+        ],
+        "target": {
+          "minutes": 1
+        }
+      }
+    },
+    {
+      "id": "finde-libre",
+      "emoji": "🛋️",
+      "name": "Fin de semana libre",
+      "desc": "Ni un minuto en sedes el sábado ni el domingo (jugando al menos 3 días).",
+      "xp": 2,
+      "mode": "max",
+      "minDays": 3,
+      "rule": {
+        "type": "time",
+        "agg": "sum",
+        "weekdays": [
+          0,
+          6
+        ],
+        "target": {
+          "minutes": 1
+        }
+      }
+    }
+  ],
+  "shortcuts": [
+    {
+      "id": "sc-aeat",
+      "name": "Sede AEAT",
+      "emoji": "🏛️",
+      "url": "https://sede.agenciatributaria.gob.es/"
+    },
+    {
+      "id": "sc-ss",
+      "name": "Sede Seg. Social",
+      "emoji": "🛡️",
+      "url": "https://sede.seg-social.gob.es/"
+    },
+    {
+      "id": "sc-dehu",
+      "name": "DEHú",
+      "emoji": "📬",
+      "url": "https://dehu.redsara.es/"
+    },
+    {
+      "id": "sc-rec",
+      "name": "Registro (REC)",
+      "emoji": "📨",
+      "url": "https://rec.redsara.es/"
+    },
+    {
+      "id": "sc-catastro",
+      "name": "Catastro",
+      "emoji": "🗺️",
+      "url": "https://www.sedecatastro.gob.es/"
+    },
+    {
+      "id": "sc-boe",
+      "name": "BOE",
+      "emoji": "📰",
+      "url": "https://www.boe.es/"
     }
   ]
 }
