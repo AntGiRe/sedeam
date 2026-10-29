@@ -162,6 +162,12 @@
     .nm-rank .chip b { font-variant-numeric: tabular-nums; }
     @media (max-width: 1000px) { .nomina-grid { grid-template-columns: 1fr; } }
 
+    .wrap-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      background: linear-gradient(110deg, color-mix(in srgb, #d55181 22%, var(--surface)), color-mix(in srgb, #6250d6 18%, var(--surface)) 55%, var(--surface)); }
+    .wrap-intro { display: flex; gap: 14px; align-items: center; max-width: 560px; }
+    .wrap-e { font-size: 40px; }
+    .wrap-card h2 { font-size: 16px; margin-bottom: 2px; }
+
     /* ---------- Logros ---------- */
     .ach-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
     .ach-head .big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -438,6 +444,11 @@
           </div>
         </div>
         <div class="tiles" id="tiles"></div>
+      </div>
+
+      <div class="card wrap-card">
+        <div class="wrap-intro"><span class="wrap-e" aria-hidden="true">🎁</span><div><h2>Wrapped e informes</h2><span class="muted">Tu resumen en formato historias, con tarjeta para compartir. Y el informe mensual para imprimir o pasar a Excel.</span></div></div>
+        <div class="actions" id="wrap-actions"></div>
       </div>
 
       <div class="card">

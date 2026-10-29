@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sedeam Wrapped</title>
+  <link rel="icon" href="icons/icon32.png">
+  <script src="theme-boot.js"></script>
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    html, body { height: 100%; }
+    body { background: #05080c; overflow: hidden; color: #fff; }
+    .stage { position: fixed; inset: 0; display: grid; place-items: center; }
+    .story {
+      position: relative; width: min(440px, 100vw); height: min(780px, 100vh); border-radius: 18px; overflow: hidden; isolation: isolate;
+      background: radial-gradient(120% 70% at 80% 0%, color-mix(in srgb, var(--c1, #2a78d6) 85%, #fff 5%) 0%, transparent 60%),
+        radial-gradient(90% 60% at 0% 100%, color-mix(in srgb, var(--c2, #6250d6) 80%, transparent) 0%, transparent 70%),
+        #0a0f15;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .6);
+      transition: background .6s;
+    }
+    @media (max-width: 480px) { .story { border-radius: 0; } }
+    .story::before { content: ''; position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(135deg, rgba(255,255,255,.03) 0 2px, transparent 2px 12px); }
+    .bars { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 4px; z-index: 5; }
+    .bars span { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); overflow: hidden; }
+    .bars span i { display: block; height: 100%; width: 0; background: #fff; }
+    .bars span.done i { width: 100%; }
+    .head { position: absolute; top: 24px; left: 16px; right: 16px; display: flex; align-items: center; justify-content: space-between; z-index: 5; font-size: 11px; letter-spacing: .2em; font-weight: 800; color: rgba(255,255,255,.75); }
+    .head button { background: rgba(0,0,0,.25); border: 0; color: #fff; padding: 4px 10px; font-size: 13px; border-radius: 999px; }
+    .slide { position: absolute; inset: 0; padding: 72px 28px 40px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+    .slide[hidden] { display: none; }
+    .k { font-size: 13px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+    .huge { font-size: 76px; font-weight: 900; line-height: .95; letter-spacing: -.02em; }
+    .big { font-size: 34px; font-weight: 900; line-height: 1.05; }
+    .med { font-size: 20px; font-weight: 700; line-height: 1.25; }
+    .soft { color: rgba(255,255,255,.75); font-size: 15px; line-height: 1.45; }
+    .emoji-xl { font-size: 96px; line-height: 1; filter: drop-shadow(0 12px 24px rgba(0,0,0,.4)); }
+    .pill { display: inline-flex; align-self: flex-start; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.14); font-weight: 700; font-size: 13px; }
+    .pill.up { background: rgba(139, 212, 91, .22); }
+    .pill.down { background: rgba(230, 103, 103, .25); }
+    .rank { display: grid; gap: 10px; margin-top: 6px; }
+    .rank .row { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; }
+    .rank .n { font-size: 22px; font-weight: 900; color: rgba(255,255,255,.5); text-align: center; }
+    .rank .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 5px; }
+    .rank .bar i { display: block; height: 100%; border-radius: 4px; }
+    .rank .v { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .hours-viz { display: flex; align-items: flex-end; gap: 3px; height: 110px; margin-top: 8px; }
+    .hours-viz i { flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,.35); min-height: 2px; }
+    .hours-viz i.peak { background: #fff; }
+    .hours-axis { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255,255,255,.55); }
+    .stats3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+    .stats3 div { background: rgba(0,0,0,.25); border-radius: 10px; padding: 10px; }
+    .stats3 b { display: block; font-size: 20px; }
+    .stats3 span { font-size: 11px; color: rgba(255,255,255,.7); }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+    .badges span { display: inline-flex; gap: 6px; align-items: center; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.28); font-size: 13px; box-shadow: inset 0 0 0 1px rgba(232,182,76,.45); }
+    .final img { width: 100%; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.45); }
+    .final .acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .final .acts button, .final .acts select { position: relative; z-index: 6; }
+    .final .acts button { background: rgba(255,255,255,.14); color: #fff; border: 0; }
+    .final .acts button.primary { background: #fff; color: #0a0f15; }
+    .final .msg { text-align: center; font-size: 12px; color: rgba(255,255,255,.75); min-height: 16px; }
+    .tap { position: absolute; top: 60px; bottom: 0; width: 34%; z-index: 4; cursor: pointer; }
+    .tap.l { left: 0; } .tap.r { right: 0; width: 66%; }
+    .final-open .tap { display: none; }
+    .reveal > * { animation: rise .6s cubic-bezier(.2,.9,.25,1.1) both; }
+    .reveal > *:nth-child(2) { animation-delay: .12s; } .reveal > *:nth-child(3) { animation-delay: .24s; }
+    .reveal > *:nth-child(4) { animation-delay: .36s; } .reveal > *:nth-child(5) { animation-delay: .48s; } .reveal > *:nth-child(6) { animation-delay: .6s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+    @media (prefers-reduced-motion: reduce) { .reveal > * { animation: none; } }
+    .hint { position: fixed; bottom: 14px; left: 0; right: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,.4); }
+    .empty-state { text-align: center; align-items: center; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="story" id="story">
+      <div class="bars" id="bars"></div>
+      <div class="head"><span>SEDEAM WRAPPED</span><span><button id="pause" aria-label="Pausar">❚❚</button> <button id="close" aria-label="Cerrar">✕</button></span></div>
+      <div id="slides"></div>
+      <div class="tap l" id="tap-prev" aria-hidden="true"></div>
+      <div class="tap r" id="tap-next" aria-hidden="true"></div>
+    </div>
+  </div>
+  <div class="hint">← → para moverte · espacio para pausar</div>
+  <script type="module" src="wrapped.js"></script>
+</body>
+</html>

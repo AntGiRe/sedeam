@@ -6,6 +6,7 @@ import { applyTheme, capsule, el, fill, fmtCountdown, loadAll, paintAvatar, prof
 import { challengeState, pickChallenges, weekOf } from './lib/challenges.js';
 import { matchGame } from './lib/games.js';
 import { saveSettings } from './lib/store.js';
+import { latestPeriods, parsePeriod } from './lib/wrapped.js';
 
 const $ = (id) => document.getElementById(id);
 let state = null;
@@ -24,6 +25,13 @@ function render() {
   const live = state.live && byId[state.live.game];
 
   $('ver').textContent = `v${chrome.runtime.getManifest().version}`;
+  // Los 7 primeros días de cada mes, el Wrapped del mes anterior (y en enero, el del año).
+  const wp = new Date(now).getDate() <= 7 ? latestPeriods(new Date(now)).find((id) => Object.keys(data.days).some((k) => k.startsWith(id))) : null;
+  $('wrapped-link').hidden = !wp;
+  if (wp) {
+    $('wrapped-link').href = `wrapped.html?periodo=${wp}`;
+    $('wrapped-link').textContent = `🎁 Tu Wrapped de ${parsePeriod(wp).name} está listo →`;
+  }
   const upd = updateAvailable(state.updateStatus);
   $('update').hidden = !upd;
   if (upd) $('update').textContent = `⬇️ Hay una versión nueva (${state.updateStatus.published}). Descargar →`;

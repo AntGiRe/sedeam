@@ -9,6 +9,7 @@ import { matchGame, normalizeDomain, allGames } from '../lib/games.js';
 import { validateCatalog, pickCatalog } from '../lib/catalog.js';
 import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, seasonProgress, shiftToWorkday, daysUntil } from '../lib/calendar.js';
 import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
+import { parsePeriod, latestPeriods, computeWrapped, equivalence } from '../lib/wrapped.js';
 import { weekOf, pickChallenges, challengeState, resolveChallenges } from '../lib/challenges.js';
 import { isLoadingUrl, addLoading, outageKind, outageTarget, recordOutage, recordTabs } from '../lib/extras.js';
 
@@ -309,6 +310,46 @@ test('retos: se completan, dan puntos de temporada y los de contención esperan 
   assert.equal(sp.playedMs, 6.5 * HOUR);
   assert.equal(sp.tier, 2); // 9,5 h / 4 h por nivel
   assert.ok(evaluate(d3, catalog.achievements).some((a) => a.id === 'reto1'));
+});
+
+test('wrapped: periodos', () => {
+  assert.deepEqual([parsePeriod('2026-10').from, parsePeriod('2026-10').to, parsePeriod('2026-10').prev], ['2026-10-01', '2026-10-31', '2026-09']);
+  assert.equal(parsePeriod('2026-01').prev, '2025-12');
+  assert.deepEqual([parsePeriod('2026').from, parsePeriod('2026').to, parsePeriod('2026').prev], ['2026-01-01', '2026-12-31', '2025']);
+  assert.equal(parsePeriod('basura'), null);
+  assert.deepEqual(latestPeriods(new Date(2026, 9, 29)), ['2026-09']);
+  assert.deepEqual(latestPeriods(new Date(2027, 0, 3)), ['2026', '2026-12']);
+  assert.equal(equivalence(10 * MIN), null);
+  assert.match(equivalence(10 * HOUR).text, /^\d+ /);
+});
+
+test('wrapped: números y personalidad', () => {
+  const d = emptyData();
+  // Octubre: mucho trabajo en los días previos al 20 (plazo del 3T).
+  for (const day of ['2026-10-15', '2026-10-16', '2026-10-19', '2026-10-20']) commitSegment(d, 'aeat', t(day + 'T09:00'), t(day + 'T16:00'));
+  commitSegment(d, 'segsocial', t('2026-10-05T10:00'), t('2026-10-05T11:00'));
+  commitSegment(d, 'aeat', t('2026-09-10T10:00'), t('2026-09-10T13:00')); // septiembre, para comparar
+  d.outages['2026-10-20'] = { aeat: 2 };
+  d.loading['2026-10-20'] = 15 * MIN;
+  const w = computeWrapped(d, catalog, '2026-10');
+  assert.equal(w.totalMs, 29 * HOUR);
+  assert.equal(w.ranking[0].id, 'aeat');
+  assert.equal(w.ranking[0].ms, 28 * HOUR);
+  assert.equal(w.bestDay.ms, 7 * HOUR);
+  assert.equal(w.daysActive, 5);
+  assert.equal(w.outages, 2);
+  assert.equal(w.loadingMs, 15 * MIN);
+  assert.equal(w.prevMs, 3 * HOUR);
+  assert.ok(Math.abs(w.change - (29 - 3) / 3) < 1e-9);
+  assert.equal(w.peakHour, 10); // de 9 a 16 todos los días, más la hora extra de las 10 del día 5
+  assert.equal(w.personality.id, 'apagafuegos');
+  // Un mes vacío no rompe nada.
+  const empty = computeWrapped(emptyData(), catalog, '2026-08');
+  assert.equal(empty.totalMs, 0);
+  assert.equal(empty.personality.id, 'zen');
+  assert.equal(empty.bestDay, null);
+  // Año completo.
+  assert.equal(computeWrapped(d, catalog, '2026').totalMs, 32 * HOUR);
 });
 
 console.log(`\n${ok} pruebas OK`);

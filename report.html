@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Informe de horas</title>
+  <link rel="icon" href="icons/icon32.png">
+  <style>
+    /* Documento para imprimir: siempre en claro, sea cual sea el tema de la extensión. */
+    :root { color-scheme: light; --ink: #1a1d21; --ink-2: #4a5059; --muted: #7b828c; --line: #dfe2e6; --soft: #f4f5f7; --accent: #2a78d6; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e9ebee; color: var(--ink); font-size: 13px; }
+    .bar { position: sticky; top: 0; background: #0a0f15; color: #fff; padding: 10px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; z-index: 2; }
+    .bar b { letter-spacing: .2em; margin-right: auto; }
+    .bar select, .bar button { font: inherit; border-radius: 6px; padding: 6px 12px; border: 1px solid rgba(255,255,255,.2); background: #1d2a3a; color: #fff; cursor: pointer; }
+    .bar button.primary { background: #2a78d6; border-color: transparent; }
+    .page { max-width: 900px; margin: 24px auto 48px; background: #fff; padding: 48px 56px; box-shadow: 0 6px 30px rgba(0,0,0,.12); }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid var(--ink); padding-bottom: 16px; margin-bottom: 24px; }
+    h1 { font-size: 24px; margin: 0 0 4px; }
+    .sub { color: var(--ink-2); }
+    .meta { text-align: right; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+    .kpi { background: var(--soft); border-radius: 8px; padding: 12px 14px; }
+    .kpi span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .kpi b { display: block; font-size: 20px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; margin: 28px 0 10px; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    thead th { font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid var(--ink); }
+    tbody tr.weekend td { color: var(--muted); background: #fafbfc; }
+    tbody tr.zero td:not(:first-child) { color: #c2c7cd; }
+    tfoot td { font-weight: 700; border-top: 2px solid var(--ink); border-bottom: 0; }
+    .sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+    .bars td.b { width: 45%; }
+    .bars .track { height: 8px; background: var(--soft); border-radius: 4px; overflow: hidden; }
+    .bars .track i { display: block; height: 100%; border-radius: 4px; }
+    .note { margin-top: 28px; color: var(--muted); font-size: 11px; line-height: 1.5; border-top: 1px solid var(--line); padding-top: 12px; }
+    @media print {
+      body { background: #fff; }
+      .bar { display: none; }
+      .page { margin: 0; box-shadow: none; padding: 0; max-width: none; }
+      @page { margin: 16mm; }
+      tr { break-inside: avoid; }
+    }
+    @media (max-width: 700px) { .page { padding: 24px 16px; } .kpis { grid-template-columns: 1fr 1fr; } .table-wrap { overflow-x: auto; } }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <b>SEDEAM</b>
+    <select id="month" aria-label="Mes del informe"></select>
+    <button id="csv">Descargar Excel (CSV)</button>
+    <button class="primary" id="print">Imprimir / Guardar PDF</button>
+  </div>
+  <div class="page" id="page"></div>
+  <script type="module" src="report.js"></script>
+</body>
+</html>

@@ -37,7 +37,7 @@ jobs:
         if: steps.exists.outputs.skip != 'true'
         run: |
           mkdir -p build/sedeam
-          cp -R manifest.json background.js config.js catalog.json theme-boot.js app.html app.js popup.html popup.js ui.css icons lib build/sedeam/
+          cp -R manifest.json catalog.json ./*.html ./*.js ./*.css icons lib build/sedeam/
           cd build && zip -qr "sedeam-${{ steps.v.outputs.version }}.zip" sedeam
 
       - name: Publicar release

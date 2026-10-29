@@ -3,7 +3,7 @@
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-for page in ('popup', 'app'):
+for page in ('popup', 'app', 'wrapped', 'report'):
     html = (root / f'{page}.html').read_text()
     for a, b in [
         ('href="ui.css"', 'href="../ui.css"'),

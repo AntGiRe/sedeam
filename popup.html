@@ -11,6 +11,7 @@
     .bar .ver { font-size: 11px; color: var(--muted); }
     .update { display: block; padding: 8px 14px; background: rgba(90, 169, 230, .12); color: var(--accent); font-size: 12px; text-decoration: none; border-bottom: 1px solid var(--border); }
     .update[hidden] { display: none; }
+    .wrapped-link { background: linear-gradient(90deg, rgba(213,81,129,.22), rgba(98,80,214,.18)); color: #fff; font-weight: 600; }
     .me { display: flex; gap: 14px; align-items: center; padding: 16px 14px 14px; }
     .me-info { flex: 1; min-width: 0; }
     .me-title { font-size: 15px; font-weight: 700; }
@@ -92,6 +93,7 @@
     <a class="wordmark" href="app.html#biblioteca" target="_blank"><img src="icons/icon32.png" alt=""><span>SEDEAM</span></a>
     <span class="ver" id="ver"></span>
   </div>
+  <a class="update wrapped-link" id="wrapped-link" href="wrapped.html" target="_blank" hidden></a>
   <a class="update" id="update" href="https://github.com/AntGiRe/sedeam/releases/latest" target="_blank" hidden></a>
 
   <div class="me">

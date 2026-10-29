@@ -1,4 +1,4 @@
 .DS_Store
 *.pem
-dev/app.preview.html
-dev/popup.preview.html
+dev/*.preview.html
+!dev/toast.preview.html

@@ -6,6 +6,7 @@ import { daysUntil, seasonAt, seasonHistory, seasonProgress, upcomingDeadlines }
 import { isUnlocked, titleOptions, unlockHint } from './lib/rewards.js';
 import { outageTotals } from './lib/extras.js';
 import { challengeState, pickChallenges, weekOf } from './lib/challenges.js';
+import { latestPeriods, parsePeriod } from './lib/wrapped.js';
 import { allGames, normalizeDomain } from './lib/games.js';
 import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
 import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, loadAll, paintAvatar, profileFor, shortcutsOf, updateAvailable, withLive } from './lib/view.js';
@@ -556,6 +557,21 @@ function renderRecords() {
     ['Logros', `${unlockedCount()}/${st.catalog.achievements.length}`, 'Pestaña Logros'],
   ];
   fill($('records'), ...rec.map(([k, v, sub]) => el('div', { class: 'tile' }, el('div', { class: 'eyebrow' }, k), el('div', { class: 'v' }, v), el('div', { class: 's' }, sub))));
+}
+
+function renderWrapLinks() {
+  const now = new Date();
+  const thisMonth = dayKey(now).slice(0, 7);
+  const [last] = latestPeriods(now).filter((x) => x.length === 7);
+  const year = String(now.getFullYear() - (now.getMonth() === 0 ? 1 : 0));
+  const link = (href, text, primary) => el('a', { class: `btn${primary ? ' primary' : ''}`, href, target: '_blank' }, text);
+  fill(
+    $('wrap-actions'),
+    link(`wrapped.html?periodo=${last}`, `🎁 Wrapped de ${parsePeriod(last).name}`, true),
+    link(`wrapped.html?periodo=${thisMonth}`, `${cap(parsePeriod(thisMonth).name)} hasta hoy`),
+    link(`wrapped.html?periodo=${year}`, `Año ${year}`),
+    link(`report.html?mes=${thisMonth}`, '📄 Informe mensual'),
+  );
 }
 
 // Pantallas de carga, caídas y pestañas: lo que nadie cuenta.
@@ -1122,6 +1138,7 @@ function render() {
   if (tab === 'biblioteca') renderLibrary(sub);
   else if (tab === 'estadisticas') {
     renderProfile();
+    renderWrapLinks();
     renderActivity();
     renderHeat();
     renderHours();

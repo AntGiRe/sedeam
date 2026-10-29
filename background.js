@@ -8,6 +8,7 @@
 import { MIN, commitSegment, uncommitSegment, dayKey, fmtBadge, fmtDur, levelFor, total, sumAll } from './lib/core.js';
 import { evaluate } from './lib/rules.js';
 import { resolveChallenges } from './lib/challenges.js';
+import { latestPeriods, parsePeriod } from './lib/wrapped.js';
 import { daysUntil, seasonAt, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { rewardContext, unlockedIds } from './lib/rewards.js';
 import { enabledGames, matchGame } from './lib/games.js';
@@ -263,9 +264,27 @@ async function checkDeadlines() {
   if (items.length) await announce(items, settings);
 }
 
+// Primera semana de cada mes (desde las 9:00): aviso de que el Wrapped del mes pasado está listo.
+async function checkWrapped() {
+  const now = new Date();
+  if (now.getDate() > 7 || now.getHours() < 9) return;
+  const [settings, data, { wrappedSeen = [] }] = await Promise.all([loadSettings(), loadData(), chrome.storage.local.get('wrappedSeen')]);
+  const items = [];
+  for (const id of latestPeriods(now)) {
+    if (wrappedSeen.includes(id) || !Object.keys(data.days).some((k) => k.startsWith(id))) continue;
+    const p = parsePeriod(id);
+    wrappedSeen.push(id);
+    items.push({ id: `wrapped-${id}`, kind: 'reward', emoji: '🎁', label: 'Tu Wrapped está listo', name: p.kind === 'year' ? `Tu ${p.name} en ${BRAND.name}` : `Tu ${p.name} en ${BRAND.name}`, desc: 'Ábrelo desde el popup o en Estadísticas. Trae tarjeta para compartir.' });
+  }
+  if (!items.length) return;
+  await chrome.storage.local.set({ wrappedSeen: wrappedSeen.slice(-40) });
+  await announce(items, settings);
+}
+
 // Catálogo nuevo en GitHub y/o versión nueva del código en disco.
 async function runUpdates() {
   checkDeadlines().catch((e) => console.warn(`[${BRAND.name}] plazos`, e));
+  checkWrapped().catch((e) => console.warn(`[${BRAND.name}] wrapped`, e));
   try {
     if (await refreshRemoteCatalog()) {
       const c = await getCatalog();
@@ -361,6 +380,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 chrome.notifications.onClicked.addListener((id) => {
+  if (id.startsWith('wrapped-')) {
+    chrome.tabs.create({ url: chrome.runtime.getURL(`wrapped.html?periodo=${id.slice(8)}`) });
+    chrome.notifications.clear(id);
+    return;
+  }
   const hash = id.startsWith('logro') ? '#logros'
     : id.startsWith('recompensa') ? '#perfil'
       : id.startsWith('plazo') || id.startsWith('temporada') || id.startsWith('reto') ? '#temporada'
