@@ -9,7 +9,7 @@ export const BRAND = {
 // Repositorio público de GitHub del que se descargan el catálogo (juegos, logros) y los avisos de versión.
 // Mientras owner sea 'TU_USUARIO' no se consulta nada remoto.
 export const REPO = {
-  owner: 'TU_USUARIO',
+  owner: 'AntGiRe',
   name: 'sedeam',
   branch: 'main',
 };

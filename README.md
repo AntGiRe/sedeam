@@ -6,7 +6,7 @@
 
 1. Clona el repositorio en una carpeta fija, por ejemplo `~/Documents/sedeam`:
    ```bash
-   git clone https://github.com/TU_USUARIO/sedeam.git ~/Documents/sedeam
+   git clone https://github.com/AntGiRe/sedeam.git ~/Documents/sedeam
    ```
 2. Abre `chrome://extensions`, activa **Modo de desarrollador** y pulsa **Cargar descomprimida**. Elige esa carpeta.
 3. Fija el icono en la barra (icono del puzle → chincheta).
