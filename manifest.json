@@ -2,16 +2,57 @@
   "manifest_version": 3,
   "name": "Sedeam",
   "short_name": "Sedeam",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Tu biblioteca de trámites. Cuenta tus horas en Hacienda, la Seguridad Social y demás sedes como si fueran juegos, con logros y niveles.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4I6y4Kx9H4oWk9YNwIdlFFFh7Y1T+jbDo7KJu0FTA642ADXUvkgHbgqDnp8fSBVv/myLsfWYg83bjGX4sUaaPV4l5455psx15bC/BuSIuvHKwOZqqcSjtLnMe7X62MuGZwrFel2xyCTR7PYV74j01H7S2Q0peuQiCPOsaxOZ3QRDcBUmKB/beMqLhstTZCkVjNlgeUBdosRjkg0wU5yDuBrh5HHXjfnawXmZV0jGuV0R/mJW9oLb3gWX2ENSoXGku93WWGHNAxPe7eosYXeB8KJjntp2xvgY6FSUs/MDZvlcavsET+E335tCkLScuuhtOFRic0a0DZA8uPjGQ97VlwIDAQAB",
-  "permissions": ["tabs", "idle", "storage", "alarms", "notifications"],
-  "background": { "service_worker": "background.js", "type": "module" },
+  "permissions": [
+    "tabs",
+    "idle",
+    "storage",
+    "alarms",
+    "notifications",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.agenciatributaria.gob.es/*",
+    "https://*.agenciatributaria.es/*",
+    "https://*.seg-social.es/*",
+    "https://*.seg-social.gob.es/*",
+    "https://dehu.redsara.es/*",
+    "https://*.sedecatastro.gob.es/*",
+    "https://*.catastro.hacienda.gob.es/*",
+    "https://*.catastro.minhap.es/*",
+    "https://*.catastro.meh.es/*",
+    "https://*.registradores.org/*",
+    "https://*.rmc.es/*",
+    "https://*.dgt.gob.es/*",
+    "https://*.dgt.es/*",
+    "https://*.boe.es/*",
+    "https://*.sepe.gob.es/*",
+    "https://*.sepe.es/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Sedeam",
-    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
-  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "options_page": "app.html#ajustes"
 }

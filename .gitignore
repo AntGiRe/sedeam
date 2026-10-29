@@ -1,3 +1,4 @@
 .DS_Store
 *.pem
-dev/*.preview.html
+dev/app.preview.html
+dev/popup.preview.html

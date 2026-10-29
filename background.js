@@ -11,6 +11,7 @@ import { enabledGames, matchGame } from './lib/games.js';
 import { getCatalog, refreshRemoteCatalog } from './lib/catalog.js';
 import { checkForUpdates } from './lib/updates.js';
 import { loadData, saveData, loadSettings } from './lib/store.js';
+import { showToasts } from './lib/toast.js';
 import { BRAND } from './config.js';
 
 const TICK = 'tick';
@@ -79,11 +80,14 @@ function tick(reason, idleState) {
     const fresh = evaluate(data, catalog.achievements, now);
     if (changed || fresh.length) {
       await saveData(data);
-      if (settings.notifications) {
-        for (const a of fresh) notify(`logro-${a.id}`, `🏆 Logro desbloqueado: ${a.name}`, `${a.emoji} ${a.desc}`);
-        const lv = levelFor(total(sumAll(data)), catalog.levels);
-        if (lv.level > levelBefore) notify(`nivel-${lv.level}`, `⬆️ ¡Subes a nivel ${lv.level}!`, `Nuevo rango: ${lv.title}`);
+      const items = fresh.map((a) => ({ id: `logro-${a.id}`, kind: 'ach', emoji: a.emoji, label: '¡Logro desbloqueado!', name: a.name, desc: a.desc }));
+      const lv = levelFor(total(sumAll(data)), catalog.levels);
+      if (lv.level > levelBefore) items.push({ id: `nivel-${lv.level}`, kind: 'level', emoji: '⬆️', label: `¡Nivel ${lv.level}!`, name: lv.title, desc: 'Has subido de rango. Sigue así (o no).' });
+      if (fresh.length) {
+        const { unseen = [] } = await chrome.storage.local.get('unseen');
+        await chrome.storage.local.set({ unseen: [...new Set([...unseen, ...fresh.map((a) => a.id)])] });
       }
+      await announce(items, settings);
     }
 
     await chrome.storage.session.set({ live: game ? { game: game.id, start: now } : null, recent: segs });
@@ -102,6 +106,37 @@ async function updateBadge(data, game) {
   await chrome.action.setBadgeTextColor?.({ color: '#ffffff' });
   await chrome.action.setBadgeText({ text: fmtBadge(today) });
   await chrome.action.setTitle({ title: `${BRAND.name} · Jugando a ${game.name} · hoy ${fmtDur(today)}` });
+}
+
+// Avisa como en los juegos: tarjeta dentro de la página que tienes delante. Si eso no es posible
+// (pestaña sin permiso, chrome://…), cae a la notificación del sistema.
+async function announce(items, settings) {
+  if (!items.length || !settings.notifications) return;
+  // Las páginas propias abiertas (biblioteca) lo pintan ellas mismas al ver este cambio.
+  await chrome.storage.local.set({ lastToast: { items, at: Date.now() } });
+  const where = settings.toastInPage ? await toastInActiveTab(items, settings) : 'none';
+  if (where === 'none' && settings.systemNotifications) {
+    for (const it of items) notify(it.id, `${it.emoji} ${it.label}`, `${it.name} — ${it.desc}`);
+  }
+}
+
+async function toastInActiveTab(items, settings) {
+  let win;
+  try {
+    win = await chrome.windows.getLastFocused();
+  } catch {
+    return 'none';
+  }
+  if (!win?.focused) return 'none';
+  const [tab] = await chrome.tabs.query({ active: true, windowId: win.id });
+  if (!tab?.id) return 'none';
+  if (tab.url?.startsWith(chrome.runtime.getURL(''))) return 'own-page';
+  try {
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: showToasts, args: [items, { sound: settings.sound, brand: BRAND.name }] });
+    return 'page';
+  } catch {
+    return 'none';
+  }
 }
 
 function notify(id, title, message) {
@@ -182,6 +217,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   // El popup pide un apunte al abrirse para enseñar cifras al segundo.
   if (msg?.type === 'flush') {
     tick('flush').then(() => reply(true));
+    return true;
+  }
+  if (msg?.type === 'test-toast') {
+    loadSettings().then(async (settings) => {
+      const items = [{ id: 'prueba', kind: 'ach', emoji: '🧪', label: '¡Logro desbloqueado!', name: 'Aviso de prueba', desc: 'Así saldrán tus logros mientras trabajas en la sede.' }];
+      if (msg.system) notify('prueba', `${items[0].emoji} ${items[0].label}`, `${items[0].name} — ${items[0].desc}`);
+      else await announce(items, { ...settings, notifications: true });
+      reply(true);
+    });
     return true;
   }
   if (msg?.type === 'check-updates') {

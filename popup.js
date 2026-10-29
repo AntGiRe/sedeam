@@ -81,7 +81,20 @@ async function refresh() {
   render();
 }
 
+// Logros desbloqueados desde la última vez que miraste: se enseñan aquí una vez y se dan por vistos.
+async function showFresh() {
+  const [{ unseen = [] }, { catalog }] = await Promise.all([chrome.storage.local.get('unseen'), state ? Promise.resolve(state) : loadAll()]);
+  const list = unseen.map((id) => catalog.achievements.find((a) => a.id === id)).filter(Boolean).slice(-3).reverse();
+  $('fresh').hidden = !list.length;
+  $('fresh').replaceChildren(
+    ...list.map((a) =>
+      el('a', { href: 'app.html#logros', target: '_blank' }, el('span', { class: 'ico', 'aria-hidden': 'true' }, a.emoji), el('div', { style: 'min-width:0' }, el('div', { class: 'k' }, '🏆 Logro desbloqueado'), el('b', {}, a.name))),
+    ),
+  );
+  if (unseen.length) chrome.storage.local.set({ unseen: [] });
+}
+
 // Pide un apunte al service worker para que las cifras estén al día y luego refresca cada segundo.
-chrome.runtime.sendMessage({ type: 'flush' }).catch(() => {}).finally(refresh);
+chrome.runtime.sendMessage({ type: 'flush' }).catch(() => {}).finally(() => refresh().then(showFresh));
 setInterval(() => state && render(), 1000);
 setInterval(refresh, 15000);

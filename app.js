@@ -5,6 +5,7 @@ import { progress } from './lib/rules.js';
 import { allGames, normalizeDomain } from './lib/games.js';
 import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
 import { capsule, el, fmtProgress, levelColor, loadAll, updateAvailable, withLive } from './lib/view.js';
+import { showToasts } from './lib/toast.js';
 import { BRAND, REMOTE_ENABLED, REPO, repoUrl } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -27,6 +28,7 @@ let range = 'week';
 let offset = 0;
 let achFilter = 'all';
 let search = '';
+let fresh = new Set(); // logros recién desbloqueados que aún no habías visto
 
 // ---------- Tooltip ----------
 
@@ -237,12 +239,12 @@ function achRow(a, { compact = false } = {}) {
   const pct = p ? Math.min(100, (p.value / p.target) * 100) : 0;
   return el(
     'div',
-    { class: `ach ${ts ? 'unlocked' : 'locked'}` },
+    { class: `ach ${ts ? 'unlocked' : 'locked'}${fresh.has(a.id) ? ' fresh' : ''}` },
     el('div', { class: 'ico', 'aria-hidden': 'true' }, el('span', {}, hidden ? '🔒' : a.emoji)),
     el(
       'div',
       { class: 'body' },
-      el('div', { class: 'name' }, hidden ? 'Logro secreto' : a.name),
+      el('div', { class: 'name' }, hidden ? 'Logro secreto' : a.name, fresh.has(a.id) ? el('span', { class: 'new-tag' }, 'NUEVO') : null),
       el('div', { class: 'desc' }, hidden ? 'Sigue jugando para descubrirlo.' : a.desc),
       p && p.unit !== 'bool' && !compact
         ? el('div', { class: 'prog' }, el('div', { class: 'xp' }, el('i', { style: `width:${pct}%` })), el('span', {}, fmtProgress(p)))
@@ -563,6 +565,8 @@ function renderAchievements() {
   };
   const shown = list.filter(pass).sort((a, b) => score(b) - score(a));
   $('ach-list').replaceChildren(...(shown.length ? shown.map((a) => achRow(a)) : [el('div', { class: 'empty' }, 'Nada por aquí.')]));
+  // Al ver la pestaña de logros, los nuevos dejan de serlo (pero siguen marcados mientras estés aquí).
+  if (st.unseen.length) chrome.storage.local.set({ unseen: [] });
 }
 
 // ---------- Ajustes ----------
@@ -589,6 +593,10 @@ function renderSettings() {
 
   $('idle').value = String(st.settings.idleMinutes);
   $('notif').checked = !!st.settings.notifications;
+  $('toast-page').checked = !!st.settings.toastInPage;
+  $('sound').checked = !!st.settings.sound;
+  $('sysnotif').checked = !!st.settings.systemNotifications;
+  for (const id of ['toast-page', 'sound', 'sysnotif']) $(id).disabled = !st.settings.notifications;
   const disabled = new Set(st.settings.disabled);
   $('glist').replaceChildren(
     ...allGames(st.catalog, st.settings).map((g) => {
@@ -641,6 +649,11 @@ function wireSettings() {
   });
   $('idle').addEventListener('change', (e) => updateSettings({ idleMinutes: Number(e.target.value) }));
   $('notif').addEventListener('change', (e) => updateSettings({ notifications: e.target.checked }));
+  $('toast-page').addEventListener('change', (e) => updateSettings({ toastInPage: e.target.checked }));
+  $('sound').addEventListener('change', (e) => updateSettings({ sound: e.target.checked }));
+  $('sysnotif').addEventListener('change', (e) => updateSettings({ systemNotifications: e.target.checked }));
+  $('test-toast').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}));
+  $('test-system').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast', system: true }).catch(() => {}));
   $('add').addEventListener('submit', (e) => {
     e.preventDefault();
     const domains = $('add-domains').value.split(',').map(normalizeDomain).filter((d) => d.includes('.'));
@@ -649,6 +662,8 @@ function wireSettings() {
       $('add-domains').reportValidity();
       return;
     }
+    // Permiso para mostrar los avisos de logro dentro de esa web. Si se rechaza, se usará la notificación del sistema.
+    chrome.permissions.request({ origins: domains.map((d) => `https://*.${d}/*`) }).catch(() => {});
     const game = { id: `c_${Date.now().toString(36)}`, name: $('add-name').value.trim(), emoji: $('add-emoji').value.trim() || '🎮', domains };
     updateSettings({ customGames: [...st.settings.customGames, game] });
     e.target.reset();
@@ -732,6 +747,9 @@ function render() {
 
 async function refresh() {
   st = await loadAll();
+  const { unseen = [] } = await chrome.storage.local.get('unseen');
+  st.unseen = unseen;
+  for (const id of unseen) fresh.add(id);
   render();
 }
 
@@ -756,6 +774,11 @@ let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 150); });
 // Solo se repinta cuando cambian datos de verdad (no en cada tecla de un formulario de Ajustes).
 chrome.storage.onChanged.addListener((changes) => {
+  // El aviso de logro también sale aquí si estás mirando la biblioteca en ese momento.
+  const toast = changes.lastToast?.newValue;
+  if (toast && Date.now() - toast.at < 10_000 && document.visibilityState === 'visible') {
+    showToasts(toast.items, { sound: st?.settings.sound, brand: BRAND.name });
+  }
   if (changes.data || changes.settings || changes.remoteCatalog || changes.updateStatus || changes.live) refresh();
 });
 wireSettings();

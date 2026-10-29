@@ -651,6 +651,11 @@
   "news": [
     {
       "date": "2026-10-29",
+      "title": "Avisos de logro como en las consolas",
+      "body": "Al desbloquear un logro aparece una tarjeta con sonido en la esquina de la sede que estés usando. Se puede probar y ajustar en Ajustes → Avisos."
+    },
+    {
+      "date": "2026-10-29",
       "title": "Horas en Sede ahora es Sedeam",
       "body": "Nueva biblioteca, logros con barra de progreso, ficha de cada juego y actualizaciones automáticas del catálogo."
     }
