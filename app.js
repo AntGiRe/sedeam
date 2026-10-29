@@ -8,11 +8,11 @@ import { outageTotals } from './lib/extras.js';
 import { DAILY_BONUS_XP, fmtXp } from './lib/xp.js';
 import { challengeState, pickChallenges, weekOf } from './lib/challenges.js';
 import { isYearUnlocked, latestPeriods, parsePeriod, yearUnlockDate } from './lib/wrapped.js';
-import { allGames, normalizeDomain } from './lib/games.js';
+import { allGames } from './lib/games.js';
 import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
-import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, loadAll, paintAvatar, profileFor, shortcutsOf, updateAvailable, withLive } from './lib/view.js';
+import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, levelColor, loadAll, paintAvatar, profileFor, shortcutsOf, updateAvailable, withLive } from './lib/view.js';
 import { showToasts } from './lib/toast.js';
-import { BRAND, REMOTE_ENABLED, REPO, releasesUrl } from './config.js';
+import { BRAND, REMOTE_ENABLED } from './config.js';
 
 const $ = (id) => document.getElementById(id);
 const SVG = 'http://www.w3.org/2000/svg';
@@ -411,15 +411,8 @@ function buckets() {
   };
 }
 
-function renderProfile() {
-  const lv = me.lv;
+function renderStatTiles() {
   const grand = total(sumAll(data));
-  paintAvatar($('p-avatar'), me.profile, lv.level, !!st.live);
-  $('p-level').textContent = `Nivel ${lv.level} · ${me.profile.titleText}`;
-  $('p-title').textContent = me.profile.name;
-  $('p-xp').style.width = `${Math.round(lv.progress * 100)}%`;
-  $('p-xp-label').textContent = lv.nextTitle ? `${fmtXp(lv.xp)} · faltan ${fmtXp(lv.xpToNext)} para ${lv.nextTitle}` : `${fmtXp(lv.xp)} · rango máximo`;
-
   const now = new Date();
   const today = dayKey(now);
   const tiles = [
@@ -798,67 +791,148 @@ async function updateProfile(patch) {
   await updateSettings({ profile: { ...(st.settings.profile || {}), ...patch } });
 }
 
+const THEME_SW = {
+  sede: ['#0e141c', '#151e29', '#5aa9e6', '#0a0f15'],
+  papel: ['#efe6d2', '#f8f1e1', '#b06d1e', '#3a2c1a'],
+  boe: ['#f4f4f2', '#ffffff', '#333333', '#111111'],
+  oro: ['#12100a', '#1c1810', '#e8b64c', '#0a0905'],
+  cierre: ['#150b0e', '#21121a', '#ff7a7a', '#0d0608'],
+  renta: ['#0c1510', '#122019', '#6cc644', '#070d09'],
+};
+let showcaseEditing = false;
+
 function renderProfilePage() {
   const { profile, ctx, lv } = me;
   const all = sumAll(data);
   const cfg = st.catalog.seasons;
-  const hist = cfg ? seasonHistory(data, cfg).seasons.filter((x) => x.tier >= 5).reverse() : [];
+  const live = st.live && byId[st.live.game];
+  const season = cfg ? seasonAt(cfg, new Date()) : null;
+  const firstPlayed = Object.values(data.firstPlayed).filter(Boolean).sort((a, b) => a - b)[0];
+
+  // Cabecera: avatar, nombre, título, estado y nivel tipo Steam.
   const avatar = el('div', { class: 'avatar', 'aria-hidden': 'true' }, profile.avatar, el('span', { class: 'lvl' }, lv.level));
-  paintAvatar(avatar, profile, lv.level, !!st.live);
+  paintAvatar(avatar, profile, lv.level, !!live);
+  if (season) $('pf-hero').style.setProperty('--season', season.color);
   fill(
-    $('profile-hero'),
+    $('pf-hero'),
     avatar,
     el(
       'div',
-      {},
+      { style: 'min-width:0' },
       el('div', { class: 'pname' }, profile.name),
       el('div', { class: 'ptitle' }, profile.titleText),
-      el(
-        'div',
-        { class: 'facts' },
-        el('div', {}, el('span', { class: 'eyebrow' }, 'Nivel'), el('b', {}, `${lv.level} · ${lv.title}`)),
-        el('div', {}, el('span', { class: 'eyebrow' }, 'Horas'), el('b', {}, fmtHours(total(all)))),
-        el('div', {}, el('span', { class: 'eyebrow' }, 'Logros'), el('b', {}, `${unlockedCount()}/${st.catalog.achievements.length}`)),
-        el('div', {}, el('span', { class: 'eyebrow' }, 'Mejor temporada'), el('b', {}, `Nv. ${ctx.bestTier}`)),
-      ),
+      el('div', { class: 'pstatus' }, live ? el('span', { class: 'status-playing' }, `● Jugando a ${live.name}`) : el('span', { style: 'color:rgba(255,255,255,.65)' }, firstPlayed ? `En ${BRAND.name} desde ${fmtDate(firstPlayed, { month: 'long', year: 'numeric' })}` : `Recién llegado a ${BRAND.name}`)),
+      el('button', { class: 'edit', onclick: openEdit }, '✏️ Editar perfil'),
     ),
-    hist.length
-      ? el('div', { class: 'badges' }, hist.slice(0, 8).map((x) => el('div', { class: 'sbadge', style: `--season:${x.color}`, title: `${x.label} · ${x.name} · nivel ${x.tier}` }, el('div', {}, x.tier >= cfg.tiers ? '🥇' : x.tier >= 15 ? '🥈' : '🥉'), x.label)))
-      : null,
+    el(
+      'div',
+      { class: 'lvl-big', style: `--lvl:${levelColor(lv.level)}` },
+      el('div', { class: 'ring', style: `--p:${Math.round(lv.progress * 100)}` }, el('div', {}, el('span', {}, 'NIVEL'), el('b', {}, lv.level))),
+      el('small', {}, lv.nextTitle ? `${fmtXp(lv.xpToNext)} para ${lv.nextTitle}` : 'Rango máximo'),
+    ),
   );
 
-  // Vitrina: 3 huecos, cada uno con su selector.
+  // Vitrina: 3 medallas; al editar, se eligen tocando los logros desbloqueados.
   const got = st.catalog.achievements.filter((a) => data.achievements[a.id]);
   const chosen = [...profile.showcase];
   fill(
     $('showcase'),
     [0, 1, 2].map((i) => {
       const a = st.catalog.achievements.find((x) => x.id === chosen[i]);
-      const sel = el(
-        'select',
-        {
-          'aria-label': `Hueco ${i + 1} de la vitrina`,
-          onchange: (e) => {
-            const next = [...chosen];
-            next[i] = e.target.value || null;
-            updateProfile({ showcase: next.filter(Boolean).filter((v, k, arr) => arr.indexOf(v) === k) });
-          },
-        },
-        el('option', { value: '' }, got.length ? '— Elige un logro —' : 'Aún no tienes logros'),
-        got.map((x) => el('option', { value: x.id, selected: x.id === chosen[i] }, `${x.emoji} ${x.name}`)),
-      );
       return el(
         'div',
         { class: `slot${a ? '' : ' empty'}` },
-        el('div', { class: 'ico', 'aria-hidden': 'true' }, a ? a.emoji : '🏆'),
+        el('div', { class: 'ico', 'aria-hidden': 'true' }, a ? a.emoji : '＋'),
         el('div', { class: 'nm' }, a ? a.name : 'Hueco libre'),
         a ? el('div', { class: 'muted', style: 'font-size:12px' }, a.desc) : null,
-        sel,
       );
     }),
   );
+  $('showcase-edit').textContent = showcaseEditing ? 'Hecho' : 'Editar vitrina';
+  $('showcase-pick').hidden = !showcaseEditing;
+  if (showcaseEditing) {
+    fill(
+      $('showcase-pick'),
+      el('div', { class: 'count' }, got.length ? `Elige hasta 3 · ${chosen.length}/3` : 'Aún no tienes logros que enseñar.'),
+      got.map((a) => el('button', {
+        title: a.name,
+        'aria-pressed': String(chosen.includes(a.id)),
+        onclick: () => {
+          const next = chosen.includes(a.id) ? chosen.filter((x) => x !== a.id) : [...chosen, a.id].slice(-3);
+          updateProfile({ showcase: next });
+        },
+      }, a.emoji)),
+    );
+  }
 
-  // Personalizar
+  // Sedes favoritas (top 3 por horas) y actividad reciente.
+  const favs = games.filter((g) => all[g.id]).sort((a, b) => all[b.id] - all[a.id]).slice(0, 3);
+  fill(
+    $('pf-favs'),
+    favs.length
+      ? favs.map((g) => el('a', { href: `#biblioteca/${g.id}` }, capsule(g), el('div', { class: 'meta' }, el('b', {}, g.name), fmtHours(all[g.id]))))
+      : el('p', { class: 'muted', style: 'margin:0' }, 'Entra en alguna sede y aparecerán aquí.'),
+  );
+  const two = sumRange(data, dayKey(addDays(new Date(), -13)), dayKey(new Date()));
+  $('pf-recent-sub').textContent = `${fmtHours(total(two))} en las últimas 2 semanas`;
+  const recent = games.filter((g) => data.lastPlayed[g.id]).sort((a, b) => data.lastPlayed[b.id] - data.lastPlayed[a.id]).slice(0, 4);
+  fill(
+    $('pf-recent'),
+    recent.length
+      ? recent.map((g) => el('a', { href: `#biblioteca/${g.id}` }, capsule(g, { mini: true }), el('div', {}, el('b', {}, g.name), el('small', {}, `Última sesión: ${fmtAgo(st.live?.game === g.id ? Date.now() : data.lastPlayed[g.id])}`)), el('div', { class: 'h' }, fmtHours(two[g.id] || 0), el('small', {}, '2 semanas'))))
+      : el('p', { class: 'muted', style: 'margin:0' }, 'Sin actividad todavía.'),
+  );
+
+  // Columna lateral
+  fill(
+    $('pf-level'),
+    el('h3', {}, 'Experiencia'),
+    el('div', { class: 'side-xp' }, el('div', { class: 'big' }, fmtXp(lv.xp)), el('div', { class: 'xp' }, el('i', { style: `width:${Math.round(lv.progress * 100)}%` })), el('div', { class: 'muted', style: 'font-size:12px' }, lv.nextTitle ? `Nivel ${lv.level} · ${fmtXp(lv.xpInLevel)} / ${fmtXp(lv.xpForLevel)}` : `Nivel ${lv.level} · rango máximo`)),
+  );
+  const nAch = got.length;
+  const lastAch = [...got].sort((a, b) => data.achievements[b.id] - data.achievements[a.id]).slice(0, 6);
+  fill(
+    $('pf-ach'),
+    el('h3', {}, 'Logros'),
+    el('div', { class: 'side-xp' }, el('div', { class: 'big' }, `${nAch} / ${st.catalog.achievements.length}`), el('div', { class: 'xp gold' }, el('i', { style: `width:${(nAch / st.catalog.achievements.length) * 100}%` }))),
+    lastAch.length ? el('div', { class: 'ach-mini' }, lastAch.map((a) => el('span', { title: a.name }, a.emoji))) : null,
+    el('a', { class: 'btn ghost', href: '#logros', style: 'margin-top:10px' }, 'Ver todos'),
+  );
+  const hist = cfg ? seasonHistory(data, cfg).seasons.filter((x) => x.tier >= 5).reverse() : [];
+  fill(
+    $('pf-badges'),
+    el('h3', {}, 'Insignias de temporada'),
+    hist.length
+      ? el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, hist.slice(0, 8).map((x) => el('div', { class: 'sbadge', style: `--season:${x.color}`, title: `${x.label} · ${x.name} · nivel ${x.tier}` }, el('div', {}, x.tier >= cfg.tiers ? '🥇' : x.tier >= 15 ? '🥈' : '🥉'), x.label)))
+      : el('p', { class: 'muted', style: 'margin:0;font-size:12px' }, 'Llega al nivel 5 de una temporada para ganar tu primera insignia.'),
+  );
+  const s = streaks(data);
+  const facts = [
+    ['Horas en sedes', fmtHours(total(all))],
+    ['Sedes jugadas', String(Object.values(all).filter((ms) => ms > 0).length)],
+    ['Racha actual', `${s.current} días`],
+    ['Mejor racha', `${s.best} días`],
+    ['Mejor temporada', `Nivel ${ctx.bestTier}`],
+  ];
+  fill($('pf-facts'), el('h3', {}, 'En cifras'), el('dl', { class: 'facts' }, facts.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, v)])));
+
+  if ($('pf-edit').open) renderEdit();
+}
+
+// ---------- Panel «Editar perfil» ----------
+
+let editTab = 'general';
+
+function openEdit() {
+  renderEdit();
+  $('pf-edit').showModal();
+}
+
+function renderEdit() {
+  const { profile, ctx, lv } = me;
+  for (const b of document.querySelectorAll('[data-ptab]')) b.setAttribute('aria-selected', String(b.dataset.ptab === editTab));
+  for (const p of document.querySelectorAll('.pf-pane')) p.hidden = p.dataset.pane !== editTab;
+
   if (document.activeElement !== $('p-name')) $('p-name').value = (st.settings.profile || {}).name || '';
   const titles = titleOptions(st.catalog, ctx);
   const groups = [...new Set(titles.map((t) => t.group))];
@@ -869,7 +943,6 @@ function renderProfilePage() {
   );
 
   const rewards = st.catalog.rewards || [];
-  const picked = st.settings.profile || {};
   const pickBtn = (r, content, cls, current) => {
     const open = isUnlocked(r, ctx);
     return el(
@@ -878,7 +951,7 @@ function renderProfilePage() {
         type: 'button',
         class: `${cls}${open ? '' : ' locked'}`,
         'aria-pressed': String(current),
-        title: open ? `${r.name}${r.desc ? ` — ${r.desc}` : ''}` : `${r.name} · Se desbloquea con: ${unlockHint(r, st.catalog)}`,
+        title: open ? `${r.name}${r.desc ? ` — ${r.desc}` : ''}` : `${r.name} · ${unlockHint(r, st.catalog)}`,
         onclick: () => open && updateProfile({ [r.type]: r.id }),
       },
       content,
@@ -886,32 +959,14 @@ function renderProfilePage() {
   };
   const currentAvatar = rewards.find((r) => r.type === 'avatar' && r.emoji === profile.avatar)?.id;
   fill($('pick-avatar'), rewards.filter((r) => r.type === 'avatar').map((r) => pickBtn(r, r.emoji, 'pick', r.id === currentAvatar)));
-
-  const THEME_SW = {
-    sede: ['#0e141c', '#151e29', '#5aa9e6', '#0a0f15'],
-    papel: ['#efe6d2', '#f8f1e1', '#b06d1e', '#3a2c1a'],
-    boe: ['#f4f4f2', '#ffffff', '#333333', '#111111'],
-    oro: ['#12100a', '#1c1810', '#e8b64c', '#0a0905'],
-    cierre: ['#150b0e', '#21121a', '#ff7a7a', '#0d0608'],
-    renta: ['#0c1510', '#122019', '#6cc644', '#070d09'],
-  };
   fill(
     $('pick-theme'),
-    rewards
-      .filter((r) => r.type === 'theme')
-      .map((r) => {
-        const key = r.id.replace(/^theme-/, '');
-        const sw = THEME_SW[key] || THEME_SW.sede;
-        const open = isUnlocked(r, ctx);
-        return pickBtn(
-          r,
-          [el('div', { class: 'sw' }, sw.map((c) => el('span', { style: `background:${c}` }))), el('div', { class: 'tx' }, el('b', {}, `${open ? '' : '🔒 '}${r.name}`), el('span', {}, open ? r.desc : unlockHint(r, st.catalog)))],
-          'theme-card',
-          key === profile.theme,
-        );
-      }),
+    rewards.filter((r) => r.type === 'theme').map((r) => {
+      const key = r.id.replace(/^theme-/, '');
+      const open = isUnlocked(r, ctx);
+      return pickBtn(r, [el('div', { class: 'sw' }, (THEME_SW[key] || THEME_SW.sede).map((c) => el('span', { style: `background:${c}` }))), el('div', { class: 'tx' }, el('b', {}, `${open ? '' : '🔒 '}${r.name}`), el('span', {}, open ? r.desc : unlockHint(r, st.catalog)))], 'theme-card', key === profile.theme);
+    }),
   );
-
   const none = { id: '', type: 'frame', name: 'Sin marco', unlock: { default: true } };
   fill(
     $('pick-frame'),
@@ -931,9 +986,22 @@ function wireProfile() {
     t = setTimeout(() => updateProfile({ name: e.target.value.trim() }), 400);
   });
   $('pick-title').addEventListener('change', (e) => updateProfile({ title: e.target.value || null }));
+  $('showcase-edit').addEventListener('click', () => {
+    showcaseEditing = !showcaseEditing;
+    renderProfilePage();
+  });
+  $('pf-edit-close').addEventListener('click', () => $('pf-edit').close());
+  $('pf-edit').addEventListener('click', (e) => e.target === $('pf-edit') && $('pf-edit').close()); // clic fuera
+  for (const b of document.querySelectorAll('[data-ptab]')) {
+    b.addEventListener('click', () => {
+      editTab = b.dataset.ptab;
+      renderEdit();
+    });
+  }
 }
 
 // ---------- Ajustes ----------
+// Pocas opciones a propósito: las sedes, los plazos y los tiempos los decide el catálogo.
 
 async function updateSettings(patch) {
   st.settings = { ...st.settings, ...patch };
@@ -941,64 +1009,21 @@ async function updateSettings(patch) {
 }
 
 function renderSettings() {
-  const u = st.updateStatus;
-  const kv = (k, v) => [el('dt', {}, k), el('dd', {}, v)];
-  fill($('upd-info'), 
-    ...kv('Versión instalada', chrome.runtime.getManifest().version),
-    ...kv('Última publicada', REMOTE_ENABLED ? u?.published || 'sin comprobar' : 'sin repositorio configurado'),
-    ...kv('Catálogo', `v${st.catalog.catalogVersion} · ${st.catalog.source === 'remote' ? 'descargado de GitHub' : 'el que trae la extensión'} · ${st.catalog.games.length} juegos, ${st.catalog.achievements.length} logros`),
-    ...kv('Última comprobación', u?.checkedAt ? `${fmtAgo(u.checkedAt)}, ${new Date(u.checkedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : 'nunca'),
-  );
-  fill($('upd-help'), 
-    REMOTE_ENABLED
-      ? el('span', {}, 'Los juegos, logros y plazos nuevos se descargan solos cada hora. Para el código nuevo: si instalaste con git, haz «git pull»; si instalaste desde un zip, ', el('a', { href: releasesUrl(), target: '_blank', rel: 'noopener' }, 'descarga la última versión'), ' y descomprímela encima de la misma carpeta. En ambos casos Sedeam se recarga solo y tus horas y logros no se pierden.')
-      : `Para recibir actualizaciones, pon tu usuario de GitHub en config.js (ahora: ${REPO.owner}). Mientras tanto se usa el catálogo que trae la extensión.`,
-  );
-
-  $('idle').value = String(st.settings.idleMinutes);
   $('notif').checked = !!st.settings.notifications;
-  $('toast-page').checked = !!st.settings.toastInPage;
   $('sound').checked = !!st.settings.sound;
-  $('sysnotif').checked = !!st.settings.systemNotifications;
-  for (const id of ['toast-page', 'sound', 'sysnotif']) $(id).disabled = !st.settings.notifications;
-  $('xp-toasts').checked = !!st.settings.xpToasts;
-  $('break-on').checked = !!st.settings.breakReminder;
-  $('break-min').value = String(st.settings.breakMinutes);
-  $('break-min').disabled = !st.settings.breakReminder;
-  renderShortcutsSettings();
+  $('sound').disabled = !st.settings.notifications;
   $('dl-alerts').checked = !!st.settings.deadlineAlerts;
-  $('dl-days').value = String(st.settings.deadlineDays);
-  $('dl-days').disabled = !st.settings.deadlineAlerts;
-  const disabled = new Set(st.settings.disabled);
-  fill($('glist'), 
-    ...allGames(st.catalog, st.settings).map((g) => {
-      const id = `g-${g.id}`;
-      return el(
-        'div',
-        { class: 'grow' },
-        el('input', {
-          type: 'checkbox', id, checked: !disabled.has(g.id),
-          onchange: (e) => {
-            const s = new Set(st.settings.disabled);
-            e.target.checked ? s.delete(g.id) : s.add(g.id);
-            updateSettings({ disabled: [...s] });
-          },
-        }),
-        capsule(g, { mini: true }),
-        el('label', { class: 'info2', for: id }, el('div', {}, g.name, g.custom ? el('span', { class: 'muted' }, ' · tuyo') : null), el('div', { class: 'doms' }, g.domains.join(' · '))),
-        g.custom
-          ? el('button', {
-              class: 'danger', type: 'button', 'aria-label': `Quitar ${g.name}`,
-              onclick: () => {
-                if (confirm(`¿Quitar "${g.name}"? Las horas ya registradas se conservan en tus datos.`)) {
-                  updateSettings({ customGames: st.settings.customGames.filter((c) => c.id !== g.id) });
-                }
-              },
-            }, 'Quitar')
-          : null,
-      );
-    }),
-  );
+  $('break-on').checked = !!st.settings.breakReminder;
+  renderShortcutsSettings();
+
+  const u = st.updateStatus;
+  const v = chrome.runtime.getManifest().version;
+  $('ver-title').textContent = `${BRAND.name} ${v}`;
+  $('upd-help').textContent = !REMOTE_ENABLED
+    ? 'Sin repositorio de actualizaciones configurado.'
+    : updateAvailable(u)
+      ? `Hay una versión nueva: ${u.published}. Descárgala desde GitHub o haz «git pull»; tus datos se conservan.`
+      : `Estás al día${u?.checkedAt ? ` (comprobado ${fmtAgo(u.checkedAt).toLowerCase()})` : ''}. Los juegos, logros y plazos nuevos llegan solos.`;
 }
 
 const saveShortcuts = (list) => updateSettings({ shortcuts: list });
@@ -1024,7 +1049,7 @@ function renderShortcutsSettings() {
               { class: 'btns' },
               el('button', { type: 'button', class: 'ghost', disabled: i === 0, 'aria-label': `Subir ${sc.name}`, onclick: () => move(i, -1) }, '↑'),
               el('button', { type: 'button', class: 'ghost', disabled: i === list.length - 1, 'aria-label': `Bajar ${sc.name}`, onclick: () => move(i, 1) }, '↓'),
-              el('button', { type: 'button', class: 'danger', 'aria-label': `Quitar ${sc.name}`, onclick: () => saveShortcuts(list.filter((x) => x.id !== sc.id)) }, 'Quitar'),
+              el('button', { type: 'button', class: 'ghost danger', 'aria-label': `Quitar ${sc.name}`, onclick: () => saveShortcuts(list.filter((x) => x.id !== sc.id)) }, '✕'),
             ),
           ),
         )
@@ -1042,72 +1067,28 @@ function download(name, text, type) {
 }
 
 function wireSettings() {
+  // Un solo interruptor para logros, niveles y píldoras de XP.
+  $('notif').addEventListener('change', (e) => updateSettings({ notifications: e.target.checked, xpToasts: e.target.checked }));
+  $('sound').addEventListener('change', (e) => updateSettings({ sound: e.target.checked }));
+  $('dl-alerts').addEventListener('change', (e) => updateSettings({ deadlineAlerts: e.target.checked }));
+  $('break-on').addEventListener('change', (e) => updateSettings({ breakReminder: e.target.checked }));
+  $('test-toast').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}));
+  $('sc-reset').addEventListener('click', () => {
+    if (confirm('¿Volver a los accesos directos de serie? Se quitarán los que hayas añadido.')) updateSettings({ shortcuts: null });
+  });
   $('upd-check').addEventListener('click', async (e) => {
     e.target.disabled = true;
     e.target.textContent = 'Buscando…';
     await chrome.runtime.sendMessage({ type: 'check-updates' }).catch(() => {});
     e.target.disabled = false;
-    e.target.textContent = 'Buscar actualizaciones ahora';
+    e.target.textContent = 'Buscar actualizaciones';
     refresh();
   });
-  $('idle').addEventListener('change', (e) => updateSettings({ idleMinutes: Number(e.target.value) }));
-  $('notif').addEventListener('change', (e) => updateSettings({ notifications: e.target.checked }));
-  $('toast-page').addEventListener('change', (e) => updateSettings({ toastInPage: e.target.checked }));
-  $('xp-toasts').addEventListener('change', (e) => updateSettings({ xpToasts: e.target.checked }));
-  $('sound').addEventListener('change', (e) => updateSettings({ sound: e.target.checked }));
-  $('sysnotif').addEventListener('change', (e) => updateSettings({ systemNotifications: e.target.checked }));
-  $('break-on').addEventListener('change', (e) => updateSettings({ breakReminder: e.target.checked }));
-  $('break-min').addEventListener('change', (e) => updateSettings({ breakMinutes: Number(e.target.value) }));
-  $('sc-add').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const url = $('sc-url').value.trim();
-    if (!/^https:\/\/[^\s]+$/.test(url)) {
-      $('sc-url').setCustomValidity('Pon una dirección que empiece por https://');
-      $('sc-url').reportValidity();
-      return;
-    }
-    saveShortcuts([...shortcutsOf(st), { id: `sc-${Date.now().toString(36)}`, name: $('sc-name').value.trim(), url, emoji: $('sc-emoji').value.trim() || '🔗' }]);
-    e.target.reset();
-  });
-  $('sc-url').addEventListener('input', (e) => e.target.setCustomValidity(''));
-  $('sc-reset').addEventListener('click', () => {
-    if (confirm('¿Volver a los accesos directos de serie? Se quitarán los que hayas añadido.')) updateSettings({ shortcuts: null });
-  });
-  $('dl-alerts').addEventListener('change', (e) => updateSettings({ deadlineAlerts: e.target.checked }));
-  $('dl-days').addEventListener('change', (e) => updateSettings({ deadlineDays: Number(e.target.value) }));
-  $('test-toast').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}));
-  $('test-system').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast', system: true }).catch(() => {}));
-  $('add').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const domains = $('add-domains').value.split(',').map(normalizeDomain).filter((d) => d.includes('.'));
-    if (!domains.length) {
-      $('add-domains').setCustomValidity('Pon al menos un dominio válido, p. ej. atc.gobiernodecanarias.org');
-      $('add-domains').reportValidity();
-      return;
-    }
-    // Permiso para mostrar los avisos de logro dentro de esa web. Si se rechaza, se usará la notificación del sistema.
-    chrome.permissions.request({ origins: domains.map((d) => `https://*.${d}/*`) }).catch(() => {});
-    const game = { id: `c_${Date.now().toString(36)}`, name: $('add-name').value.trim(), emoji: $('add-emoji').value.trim() || '🎮', domains };
-    updateSettings({ customGames: [...st.settings.customGames, game] });
-    e.target.reset();
-  });
-  $('add-domains').addEventListener('input', (e) => e.target.setCustomValidity(''));
 
-  const stamp = () => dayKey(Date.now());
   const slug = BRAND.name.toLowerCase();
   $('exp-json').addEventListener('click', () =>
-    download(`${slug}-${stamp()}.json`, JSON.stringify({ app: 'sedeam', exportedAt: new Date().toISOString(), data: st.data, settings: st.settings }, null, 2), 'application/json'),
+    download(`${slug}-copia-${dayKey(Date.now())}.json`, JSON.stringify({ app: 'sedeam', exportedAt: new Date().toISOString(), data: st.data, settings: st.settings }, null, 2), 'application/json'),
   );
-  $('exp-csv').addEventListener('click', () => {
-    const names = Object.fromEntries(allGames(st.catalog, st.settings).map((g) => [g.id, g.name]));
-    const lines = ['fecha;juego;minutos'];
-    for (const day of Object.keys(data.days).sort()) {
-      for (const [g, ms] of Object.entries(data.days[day])) {
-        if (ms > 0) lines.push(`${day};${names[g] || g};${(ms / MIN).toFixed(1).replace('.', ',')}`);
-      }
-    }
-    download(`${slug}-${stamp()}.csv`, '﻿' + lines.join('\n'), 'text/csv');
-  });
   $('imp').addEventListener('click', () => $('imp-file').click());
   $('imp-file').addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -1119,13 +1100,13 @@ function wireSettings() {
       if (!['sedeam', 'horas-en-sede'].includes(json.app) || typeof json.data?.days !== 'object') throw new Error('formato');
       if (!confirm('Esto sustituye tus datos actuales por los de la copia. ¿Seguir?')) return;
       await chrome.storage.local.set({ data: json.data, settings: { ...DEFAULT_SETTINGS, ...json.settings } });
-      $('data-msg').textContent = 'Copia importada.';
+      $('data-msg').textContent = 'Copia restaurada.';
     } catch {
       $('data-msg').textContent = `Ese archivo no parece una copia de ${BRAND.name}.`;
     }
   });
   $('reset').addEventListener('click', async () => {
-    if (!confirm('¿Borrar todas tus horas y logros? No se puede deshacer (exporta una copia antes si la quieres).')) return;
+    if (!confirm('¿Borrar todas tus horas y logros? No se puede deshacer (guarda una copia antes si la quieres).')) return;
     await chrome.storage.local.remove('data');
     await chrome.storage.session.set({ live: null, recent: [] });
     $('data-msg').textContent = 'Datos borrados. Empiezas de nuevo como Becario.';
@@ -1160,7 +1141,7 @@ function render() {
   renderChrome();
   if (tab === 'biblioteca') renderLibrary(sub);
   else if (tab === 'estadisticas') {
-    renderProfile();
+    renderStatTiles();
     renderWrapLinks();
     renderActivity();
     renderHeat();

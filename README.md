@@ -1,6 +1,6 @@
 # Sedeam
 
-*Tu biblioteca de trámites.* Extensión de Chrome que cuenta, como horas de juego, el tiempo **activo** que pasas en las webs de la Administración: Agencia Tributaria, Seguridad Social, DEHú, Catastro, Registros, DGT, BOE y SEPE. Tiene niveles, logros y estadísticas. Puedes añadir más webs desde Ajustes.
+*Tu biblioteca de trámites.* Extensión de Chrome que cuenta, como horas de juego, el tiempo **activo** que pasas en las webs de la Administración: Agencia Tributaria, Seguridad Social, DEHú, Catastro, Registros, DGT, BOE y SEPE. Tiene niveles, XP, temporadas, logros, retos semanales y un Wrapped mensual y anual. Las webs que se cuentan las decide el catálogo (`catalog.json`): para añadir una sede nueva, se añade ahí y llega sola a todas las instalaciones.
 
 ## Instalar sin saber nada de git
 
@@ -25,7 +25,7 @@ Las releases se crean solas: cada vez que cambia `version` en `manifest.json` y 
    ~/Documents/sedeam/scripts/auto-actualizar.sh
    ```
 
-> **¿Venías de "Horas en Sede"?** Es otra extensión para Chrome. Exporta la copia en su pestaña Ajustes (*Exportar copia*) e impórtala en Sedeam (*Ajustes → Importar copia*). Después, desinstala la antigua.
+> **¿Venías de "Horas en Sede"?** Es otra extensión para Chrome. Exporta la copia en su pestaña Ajustes (*Exportar copia*) y restáurala en Sedeam (*Ajustes → Restaurar copia*). Después, desinstala la antigua.
 
 ## Cómo se actualiza (sin perder datos)
 

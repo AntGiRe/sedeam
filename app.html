@@ -168,6 +168,81 @@
     .wrap-e { font-size: 40px; }
     .wrap-card h2 { font-size: 16px; margin-bottom: 2px; }
 
+    /* ---------- Perfil (página) ---------- */
+    .pf-hero { position: relative; overflow: hidden; isolation: isolate; border-radius: var(--radius); padding: 28px; margin-bottom: 16px; color: #fff;
+      display: grid; grid-template-columns: auto 1fr auto; gap: 26px; align-items: center;
+      background: radial-gradient(80% 140% at 100% 0%, color-mix(in srgb, var(--season, #2a78d6) 70%, transparent), transparent 60%),
+        linear-gradient(120deg, #070b10 25%, color-mix(in srgb, var(--accent) 45%, #070b10)); }
+    .pf-hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(135deg, rgba(255,255,255,.03) 0 2px, transparent 2px 11px); }
+    .pf-hero .avatar { width: 128px; height: 128px; font-size: 70px; border-radius: 16px; }
+    .pf-hero .avatar .lvl { display: none; }
+    .pf-hero .pname { font-size: 34px; font-weight: 900; line-height: 1.05; }
+    .pf-hero .ptitle { margin-top: 6px; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: color-mix(in srgb, var(--accent) 60%, #fff); }
+    .pf-hero .pstatus { margin-top: 10px; font-size: 13px; }
+    .pf-hero .edit { margin-top: 14px; background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.18); }
+    .lvl-big { text-align: center; }
+    .lvl-big .ring { width: 104px; height: 104px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 8px;
+      background: conic-gradient(var(--lvl) calc(var(--p) * 1%), rgba(255,255,255,.15) 0); }
+    .lvl-big .ring > div { width: 90px; height: 90px; border-radius: 50%; background: #0a0f15; display: grid; place-content: center; }
+    .lvl-big .ring b { font-size: 36px; font-weight: 900; line-height: 1; }
+    .lvl-big .ring span { font-size: 9px; letter-spacing: .16em; color: rgba(255,255,255,.6); }
+    .lvl-big small { display: block; font-size: 12px; color: rgba(255,255,255,.75); }
+    .pf-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+    .pf-side .card { margin-bottom: 12px; }
+    .pf-side h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+    .pf-favs { display: grid; grid-template-columns: repeat(3, minmax(0, 140px)); gap: 18px; }
+    .pf-favs a { text-decoration: none; color: inherit; }
+    .pf-favs .capsule { font-size: 13px; }
+    .pf-favs .meta { margin-top: 8px; font-size: 12px; color: var(--muted); }
+    .pf-favs .meta b { display: block; color: var(--text); font-size: 13px; }
+    .pf-recent { display: grid; gap: 8px; }
+    .pf-recent a { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 8px; border-radius: 8px; background: var(--surface-2); text-decoration: none; color: inherit; }
+    .pf-recent a:hover { background: var(--surface-3); }
+    .pf-recent .capsule { width: 40px; }
+    .pf-recent small { display: block; color: var(--muted); font-size: 12px; }
+    .pf-recent .h { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .pf-recent .h small { font-weight: 400; }
+    .side-xp .xp { margin: 8px 0 6px; height: 8px; border-radius: 4px; }
+    .side-xp .big { font-size: 22px; font-weight: 800; }
+    .ach-mini { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .ach-mini span { width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; font-size: 20px;
+      background: radial-gradient(circle at 30% 25%, #3c5f8a, #1d2b45); box-shadow: inset 0 0 0 1px rgba(232,182,76,.5); }
+    .pf-side .facts { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 13px; margin: 0; }
+    .pf-side .facts dt { color: var(--muted); }
+    .pf-side .facts dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .showcase-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .showcase-pick button { width: 52px; height: 52px; padding: 0; font-size: 26px; border-radius: 10px; }
+    .showcase-pick button[aria-pressed="true"] { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .showcase-pick .count { width: 100%; font-size: 12px; color: var(--muted); }
+    .pf-edit { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 64px); border: 1px solid var(--border-strong); border-radius: 14px; background: var(--surface); color: var(--text); padding: 20px 22px; }
+    .pf-edit::backdrop { background: rgba(0, 0, 0, .6); backdrop-filter: blur(3px); }
+    .pf-edit-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .pf-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; }
+    .pf-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-2); padding: 8px 12px; }
+    .pf-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+    .pf-pane .lbl { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 6px; }
+    .pf-pane input, .pf-pane select { width: 100%; max-width: 380px; }
+    .pf-edit-foot { margin-top: 16px; }
+    @media (max-width: 1000px) { .pf-grid { grid-template-columns: 1fr; } .pf-hero { grid-template-columns: auto 1fr; } .pf-hero .lvl-big { display: none; } }
+    @media (max-width: 600px) { .pf-hero { grid-template-columns: 1fr; } .pf-favs { gap: 8px; } }
+
+    /* ---------- Ajustes (interruptores) ---------- */
+    .settings { max-width: 760px; margin: 0 auto; }
+    .switches { display: grid; }
+    .sw-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .sw-row:last-child { border-bottom: 0; }
+    .sw-row b { display: block; font-weight: 600; }
+    .sw-row small { color: var(--muted); font-size: 12px; }
+    .switch { appearance: none; -webkit-appearance: none; flex: none; width: 42px; height: 24px; border-radius: 12px; background: var(--surface-3); border: 1px solid var(--border-strong); position: relative; cursor: pointer; transition: background .2s; padding: 0; margin: 0; }
+    .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+    .switch:checked { background: var(--accent-strong); border-color: transparent; }
+    .switch:checked::after { transform: translateX(18px); }
+    .about { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .about h3 { margin-bottom: 2px; }
+    .about .help { margin: 0; }
+    .stat-tiles { margin-bottom: 16px; }
+    .stat-tiles .tile { background: var(--surface); }
+
     /* ---------- Logros ---------- */
     .ach-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
     .ach-head .big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -279,15 +354,6 @@
     .sc-row .btns button { padding: 4px 8px; }
 
     /* ---------- Perfil ---------- */
-    .profile-hero { display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
-      background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 22%, var(--surface)), var(--surface) 65%); }
-    .profile-hero .avatar { width: 112px; height: 112px; font-size: 60px; border-radius: 14px; }
-    .profile-hero .lvl { min-width: 36px; height: 36px; font-size: 15px; right: -12px; bottom: -12px; }
-    .profile-hero .pname { font-size: 30px; font-weight: 800; line-height: 1.1; }
-    .profile-hero .ptitle { color: var(--accent); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; margin-top: 4px; }
-    .profile-hero .facts { display: flex; gap: 22px; margin-top: 14px; flex-wrap: wrap; }
-    .profile-hero .facts b { display: block; font-size: 18px; }
-    .profile-hero .badges { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; max-width: 320px; justify-content: flex-end; }
     .sbadge { width: 54px; text-align: center; font-size: 10px; color: var(--muted); }
     .sbadge div { width: 46px; height: 46px; margin: 0 auto 3px; border-radius: 50%; display: grid; place-items: center; font-size: 22px;
       background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--season) 70%, #fff 10%), color-mix(in srgb, var(--season) 40%, #070b10)); box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); }
@@ -298,8 +364,6 @@
     .slot.empty .ico { background: var(--surface-3); box-shadow: none; opacity: .5; }
     .slot .nm { font-weight: 700; }
     .slot select { width: 100%; }
-    .custom h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 18px 0 8px; }
-    .custom select { min-width: 260px; }
     .pick-grid { display: flex; flex-wrap: wrap; gap: 8px; }
     .pick { width: 64px; height: 64px; border-radius: 10px; font-size: 32px; padding: 0; position: relative; background: var(--surface-2); }
     .pick[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; background: var(--surface-3); }
@@ -317,19 +381,9 @@
     .theme-card .tx span { font-size: 11px; color: var(--muted); }
 
     /* ---------- Ajustes ---------- */
-    .settings h3 { font-size: 13px; margin-bottom: 8px; }
     .field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
     .help { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
-    .glist { display: grid; gap: 6px; }
-    .grow { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); }
-    .grow .capsule { width: 30px; flex: none; }
-    .grow .info2 { flex: 1; min-width: 0; }
-    .grow .doms { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
-    .add { display: grid; grid-template-columns: 70px 1fr 2fr auto; gap: 8px; margin-top: 10px; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 12px; }
-    .kv dt { color: var(--muted); }
-    .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
 
     @media (max-width: 1000px) {
       .shelf.recent { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
@@ -343,8 +397,7 @@
       .season-hero { grid-template-columns: 1fr; }
       .season-hero .big-emoji { right: 10px; opacity: .35; }
       .showcase, .challenges { grid-template-columns: 1fr; }
-      .profile-hero .badges { margin-left: 0; justify-content: flex-start; }
-    }
+      }
     @media (max-width: 640px) {
       .top-inner { gap: 10px; padding: 0 16px; }
       .top .wordmark span, .me-chip .who { display: none; }
@@ -354,7 +407,7 @@
       .hero h1 { font-size: 30px; }
       .trow { grid-template-columns: 12px 1fr 70px 40px; }
       .trow .bar { display: none; }
-      .add, .records { grid-template-columns: 1fr; }
+      .records { grid-template-columns: 1fr; }
       .news article { grid-template-columns: 1fr; gap: 4px; }
     }
   </style>
@@ -421,39 +474,55 @@
 
     <!-- PERFIL -->
     <section class="view" id="perfil" hidden>
-      <div class="card profile-hero" id="profile-hero"></div>
-      <div class="card">
-        <div class="card-head"><h2>Vitrina de logros</h2><span class="muted">Tus 3 logros favoritos, a la vista</span></div>
-        <div class="showcase" id="showcase"></div>
+      <div class="pf-hero" id="pf-hero"></div>
+      <div class="pf-grid">
+        <div class="pf-main">
+          <div class="card">
+            <div class="card-head"><h2>Vitrina de logros</h2><button class="ghost" id="showcase-edit">Editar vitrina</button></div>
+            <div class="showcase" id="showcase"></div>
+            <div class="showcase-pick" id="showcase-pick" hidden></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Sedes favoritas</h2></div>
+            <div class="pf-favs" id="pf-favs"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Actividad reciente</h2><span class="muted" id="pf-recent-sub"></span></div>
+            <div class="pf-recent" id="pf-recent"></div>
+          </div>
+        </div>
+        <aside class="pf-side">
+          <div class="card" id="pf-level"></div>
+          <div class="card" id="pf-ach"></div>
+          <div class="card" id="pf-badges"></div>
+          <div class="card" id="pf-facts"></div>
+        </aside>
       </div>
-      <div class="card custom">
-        <div class="card-head"><h2>Personalizar</h2><span class="muted">Lo bloqueado se gana subiendo de nivel, en la temporada o con logros</span></div>
-        <div class="field"><label for="p-name">Nombre visible</label><input id="p-name" maxlength="30" placeholder="Gestor/a"></div>
-        <h3>Título</h3>
-        <select id="pick-title"></select>
-        <h3>Avatar</h3>
-        <div class="pick-grid" id="pick-avatar"></div>
-        <h3>Tema de color</h3>
-        <div class="theme-grid" id="pick-theme"></div>
-        <h3>Marco</h3>
-        <div class="pick-grid" id="pick-frame"></div>
-      </div>
+
+      <dialog class="pf-edit" id="pf-edit">
+        <div class="pf-edit-head"><h2>Editar perfil</h2><button class="ghost" id="pf-edit-close" aria-label="Cerrar">✕</button></div>
+        <div class="pf-tabs" role="tablist">
+          <button role="tab" data-ptab="general">Nombre y título</button>
+          <button role="tab" data-ptab="avatar">Avatar</button>
+          <button role="tab" data-ptab="tema">Tema</button>
+          <button role="tab" data-ptab="marco">Marco</button>
+        </div>
+        <div class="pf-pane" data-pane="general">
+          <label class="lbl" for="p-name">Nombre visible</label>
+          <input id="p-name" maxlength="30" placeholder="Gestor/a">
+          <label class="lbl" for="pick-title">Título bajo tu nombre</label>
+          <select id="pick-title"></select>
+        </div>
+        <div class="pf-pane" data-pane="avatar"><div class="pick-grid" id="pick-avatar"></div></div>
+        <div class="pf-pane" data-pane="tema"><div class="theme-grid" id="pick-theme"></div></div>
+        <div class="pf-pane" data-pane="marco"><div class="pick-grid" id="pick-frame"></div></div>
+        <p class="help pf-edit-foot">Lo que tiene 🔒 se gana subiendo de nivel, en el pase de temporada o con logros. Pasa el ratón por encima para ver cómo.</p>
+      </dialog>
     </section>
 
     <!-- ESTADÍSTICAS -->
     <section class="view" id="estadisticas" hidden>
-      <div class="card profile">
-        <div class="who">
-          <div class="avatar" id="p-avatar" aria-hidden="true">🧑‍💼<span class="lvl" id="p-lvl">1</span></div>
-          <div style="flex:1;min-width:0">
-            <div class="eyebrow" id="p-level">Nivel 1</div>
-            <div class="name" id="p-title">Becario</div>
-            <div class="xp" role="progressbar" aria-label="Progreso al siguiente nivel"><i id="p-xp" style="width:0"></i></div>
-            <div class="xp-label" id="p-xp-label"></div>
-          </div>
-        </div>
-        <div class="tiles" id="tiles"></div>
-      </div>
+      <div class="tiles stat-tiles" id="tiles"></div>
 
       <div class="card wrap-card">
         <div class="wrap-intro"><span class="wrap-e" aria-hidden="true">🎁</span><div><h2>Wrapped e informes</h2><span class="muted">Tu resumen en formato historias, con tarjeta para compartir. Y el informe mensual para imprimir o pasar a Excel.</span></div></div>
@@ -516,84 +585,39 @@
     <!-- AJUSTES -->
     <section class="view settings" id="ajustes" hidden>
       <div class="card">
-        <h3>Actualizaciones</h3>
-        <dl class="kv" id="upd-info"></dl>
-        <div class="actions"><button id="upd-check">Buscar actualizaciones ahora</button></div>
-        <p class="help" id="upd-help"></p>
-      </div>
-
-      <div class="card">
-        <h3>Tiempo activo</h3>
-        <div class="field">
-          <label for="idle">Dejar de contar tras</label>
-          <select id="idle">
-            <option value="1">1 minuto</option>
-            <option value="2">2 minutos</option>
-            <option value="3">3 minutos</option>
-            <option value="5">5 minutos</option>
-            <option value="10">10 minutos</option>
-          </select>
-          <span>sin tocar ratón ni teclado</span>
+        <h3>Avisos</h3>
+        <div class="switches">
+          <label class="sw-row"><span><b>Logros, niveles y XP</b><small>Tarjetas y píldoras dentro de la sede mientras trabajas</small></span><input type="checkbox" class="switch" id="notif"></label>
+          <label class="sw-row"><span><b>Sonido</b><small>Una campanita al desbloquear algo</small></span><input type="checkbox" class="switch" id="sound"></label>
+          <label class="sw-row"><span><b>Recordatorios de plazos</b><small>3 días antes, la víspera y el mismo día</small></span><input type="checkbox" class="switch" id="dl-alerts"></label>
+          <label class="sw-row"><span><b>Pausa activa</b><small>Un aviso tras 1 h 30 min seguidos en sedes</small></span><input type="checkbox" class="switch" id="break-on"></label>
         </div>
-        <p class="help">Solo cuenta la pestaña activa de una sede, con Chrome en primer plano y mientras estés delante. El rato de inactividad se descuenta.</p>
-      </div>
-
-      <div class="card" id="avisos">
-        <h3>Avisos de logros</h3>
-        <div class="field"><input type="checkbox" id="notif"><label for="notif">Avisarme al desbloquear un logro o subir de nivel</label></div>
-        <div class="field"><input type="checkbox" id="xp-toasts"><label for="xp-toasts">Píldoras de «+15 XP» en la sede mientras trabajas</label></div>
-        <div class="field"><input type="checkbox" id="toast-page"><label for="toast-page">Mostrar la tarjeta dentro de la sede que tengo abierta, como en los juegos</label></div>
-        <div class="field"><input type="checkbox" id="sound"><label for="sound">Con sonido</label></div>
-        <div class="field"><input type="checkbox" id="sysnotif"><label for="sysnotif">Si no se puede mostrar en la página, usar la notificación del sistema</label></div>
-        <div class="field" style="margin-top:10px"><input type="checkbox" id="dl-alerts"><label for="dl-alerts">Recordarme los plazos</label>
-          <select id="dl-days" aria-label="Con cuánta antelación"><option value="1">la víspera</option><option value="3">3 días antes</option><option value="7">7 días antes</option></select>
-          <span class="muted">(y también la víspera y el mismo día)</span></div>
-        <div class="field"><input type="checkbox" id="break-on"><label for="break-on">Pausa activa: avisarme tras</label>
-          <select id="break-min" aria-label="Minutos seguidos"><option value="60">1 hora</option><option value="90">1 h 30 min</option><option value="120">2 horas</option></select>
-          <span class="muted">seguidos en sedes</span></div>
-        <div class="actions" style="margin-top:12px">
-          <button class="primary" id="test-toast">Probar aviso</button>
-          <button id="test-system">Probar notificación del sistema</button>
-        </div>
-        <p class="help">¿La notificación del sistema no aparece? En el Mac, abre <b>Ajustes del Sistema → Notificaciones → Google Chrome</b> y activa <b>Permitir notificaciones</b>. Revisa también que no tengas activado un modo de concentración. La tarjeta dentro de la sede no depende de esto.</p>
+        <div class="actions" style="margin-top:14px"><button id="test-toast">Probar aviso</button></div>
+        <p class="help">¿No ves nada fuera de las sedes? En el Mac: Ajustes del Sistema → Notificaciones → Google Chrome → Permitir.</p>
       </div>
 
       <div class="card">
         <h3>Accesos directos</h3>
-        <p class="help" style="margin:0 0 10px">Salen en el popup para abrir tus trámites de un clic. La forma más fácil de añadir uno: abre el trámite y pulsa «＋ Esta página» en el popup.</p>
         <div class="sc-list" id="sc-list"></div>
-        <form class="add sc-add" id="sc-add">
-          <input id="sc-emoji" placeholder="🔗" maxlength="4" aria-label="Emoji">
-          <input id="sc-name" placeholder="Nombre (p. ej. Modelo 303)" maxlength="28" required aria-label="Nombre">
-          <input id="sc-url" placeholder="https://sede.agenciatributaria.gob.es/…" required aria-label="Dirección">
-          <button class="primary" type="submit">Añadir</button>
-        </form>
+        <p class="help">Para añadir uno, abre el trámite y pulsa <b>＋ Esta página</b> en el popup.</p>
         <div class="actions" style="margin-top:8px"><button class="ghost" id="sc-reset" type="button">Volver a los de serie</button></div>
       </div>
 
       <div class="card">
-        <h3>Juegos</h3>
-        <p class="help" style="margin:0 0 10px">Cada juego es una web y cuenta todos sus subdominios (sede., www2.…). Los oficiales llegan con el catálogo; aquí puedes desactivarlos o añadir los tuyos.</p>
-        <div class="glist" id="glist"></div>
-        <form class="add" id="add">
-          <input id="add-emoji" placeholder="🎮" maxlength="4" aria-label="Emoji">
-          <input id="add-name" placeholder="Nombre (p. ej. ATC Canarias)" required aria-label="Nombre">
-          <input id="add-domains" placeholder="Dominios separados por comas (p. ej. gobiernodecanarias.org)" required aria-label="Dominios">
-          <button class="primary" type="submit">Añadir juego</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>Tus datos</h3>
-        <p class="help" style="margin:0 0 10px">Todo se guarda solo en este navegador y sobrevive a las actualizaciones. La extensión solo mira la dirección de la pestaña, nunca el contenido de las páginas.</p>
+        <h3>Copia de seguridad</h3>
+        <p class="help" style="margin:0 0 10px">Tus horas y logros solo están en este navegador. Guarda una copia de vez en cuando.</p>
         <div class="actions">
-          <button id="exp-json">Exportar copia (JSON)</button>
-          <button id="exp-csv">Exportar a Excel (CSV)</button>
-          <button id="imp">Importar copia…</button>
+          <button id="exp-json">Guardar copia</button>
+          <button id="imp">Restaurar copia…</button>
           <input type="file" id="imp-file" accept="application/json,.json" hidden>
-          <button class="danger" id="reset">Borrar todo</button>
+          <button class="ghost danger" id="reset">Borrar todo</button>
         </div>
         <p class="help" id="data-msg"></p>
+      </div>
+
+      <div class="card about">
+        <div><h3 id="ver-title">Sedeam</h3><p class="help" id="upd-help"></p></div>
+        <button id="upd-check">Buscar actualizaciones</button>
       </div>
     </section>
   </main>
