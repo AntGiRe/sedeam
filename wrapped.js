@@ -37,7 +37,6 @@ function build(w, profile, st) {
     el('div', { class: 'k' }, `${profile.name} · ${profile.titleText}`),
     el('div', { class: 'emoji-xl' }, profile.avatar),
     el('div', { class: 'big' }, isYear ? `Tu ${p.name} en ${BRAND.name}` : `Tu ${p.name} en ${BRAND.name}`),
-    el('div', { class: 'soft' }, 'Ponte cómodo. Hemos contado cada minuto que le has dedicado a la Administración.'),
   );
 
   const changeTxt = w.change == null ? null : w.change >= 0 ? `▲ ${Math.round(w.change * 100)} % más que ${isYear ? 'el año anterior' : 'el mes anterior'}` : `▼ ${Math.round(-w.change * 100)} % menos que ${isYear ? 'el año anterior' : 'el mes anterior'}`;
@@ -53,7 +52,7 @@ function build(w, profile, st) {
     el('div', { class: 'k' }, `Tu sede ${isYear ? 'del año' : 'del mes'}`),
     capsule(top.game, { style: 'width:150px;font-size:15px;align-self:center;transform:rotate(-4deg)' }),
     el('div', { class: 'big' }, top.game.name),
-    el('div', { class: 'soft' }, `${fmtHours(top.ms)} · el ${Math.round(top.share * 100)} % de tu tiempo. ${top.share > 0.8 ? 'Esto ya es una relación seria.' : 'Una relación sana, con espacio para otras sedes.'}`),
+    el('span', { class: 'pill' }, `${fmtHours(top.ms)} · ${Math.round(top.share * 100)} % de tu tiempo`),
     w.ranking.length > 1
       ? el('div', { class: 'rank' }, w.ranking.slice(0, 4).map((r, i) => el('div', { class: 'row' }, el('span', { class: 'n' }, i + 1), el('div', {}, el('div', {}, `${r.game.emoji} ${r.game.name}`), el('div', { class: 'bar' }, el('i', { style: `width:${(r.ms / top.ms) * 100}%;background:${r.game.color}` }))), el('span', { class: 'v' }, fmtHours(r.ms)))))
       : null,
@@ -64,7 +63,7 @@ function build(w, profile, st) {
     el('div', { class: 'k' }, 'Tu día más intenso'),
     el('div', { class: 'big' }, parseKey(bd.day).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })),
     el('div', { class: 'huge', style: 'font-size:60px' }, fmtDur(bd.ms)),
-    el('div', { class: 'soft' }, bd.ms >= 8 * 60 * MIN ? 'Más de una jornada entera en la sede. Respira.' : bd.ms >= 5 * 60 * MIN ? 'De esos días en los que comes delante del certificado digital.' : 'Intenso, pero sin dramas.'),
+    bd.ms >= 8 * 60 * MIN ? el('div', { class: 'soft' }, 'Más de una jornada entera. Respira.') : null,
     w.favWeekday ? el('span', { class: 'pill' }, `📅 Tu día de la semana favorito: el ${w.favWeekday}`) : null,
   );
 
@@ -76,7 +75,7 @@ function build(w, profile, st) {
       el('div', { class: 'huge' }, `${String(w.peakHour).padStart(2, '0')}:00`),
       el('div', { class: 'hours-viz', 'aria-hidden': 'true' }, w.hours.map((v, h) => el('i', { class: h === w.peakHour ? 'peak' : '', style: `height:${max ? Math.max(2, (v / max) * 100) : 2}%` }))),
       el('div', { class: 'hours-axis', 'aria-hidden': 'true' }, ['0h', '6h', '12h', '18h', '23h'].map((x) => el('span', {}, x))),
-      el('div', { class: 'soft' }, nightShare >= 0.05 ? `Y ojo: ${fmtDur(w.nightMs)} entre las 22:00 y las 6:00. Hacienda nunca duerme, y tú tampoco.` : 'Horario de oficina impecable. Tu cuerpo te lo agradece.'),
+      nightShare >= 0.05 ? el('span', { class: 'pill' }, `🌙 ${fmtDur(w.nightMs)} de noche`) : null,
     );
   }
 
@@ -88,7 +87,7 @@ function build(w, profile, st) {
         el('div', {}, el('b', {}, w.outages), el('span', {}, '💥 caídas de la sede')),
         el('div', {}, el('b', {}, fmtDur(w.rushMs)), el('span', {}, '🔥 días antes de plazo')),
       ),
-      el('div', { class: 'soft' }, w.outages >= 5 ? '«Servicio temporalmente no disponible». Ya te sabes la letra.' : w.outages ? 'Alguna caída, nada que un buen F5 no arregle.' : 'Ni una caída. La sede te respeta.'),
+      w.outages >= 5 ? el('div', { class: 'soft' }, '«Servicio no disponible». Ya te sabes la letra.') : null,
     );
   }
 
@@ -96,7 +95,7 @@ function build(w, profile, st) {
     add('#e8b64c', '#6e3f1c',
       el('div', { class: 'k' }, 'Tus trofeos'),
       el('div', { class: 'big' }, `${w.achievements.length} ${w.achievements.length === 1 ? 'logro' : 'logros'}${w.challenges ? ` y ${w.challenges} ${w.challenges === 1 ? 'reto' : 'retos'}` : ''}`),
-      el('div', { class: 'badges' }, w.achievements.slice(0, 8).map((a) => el('span', {}, a.emoji, a.name))),
+      el('div', { class: 'badges' }, w.achievements.slice(0, 8).map((a) => el('span', {}, el('i', { 'aria-hidden': 'true' }, a.emoji), a.name))),
     );
   }
 
@@ -264,6 +263,7 @@ async function main() {
   if (isYear && !locked) {
     setPaused(true);
     $('start').hidden = false;
+    $('story').classList.add('starting');
     $('start-year').textContent = w.period.name;
   }
   fill($('slides'), slides.map((s) => s.node));
@@ -280,6 +280,7 @@ $('music').addEventListener('click', () => setMusic(!music.playing));
 for (const [id, withMusic] of [['start-music', true], ['start-quiet', false]]) {
   $(id).addEventListener('click', () => {
     $('start').hidden = true;
+    $('story').classList.remove('starting');
     $('music').hidden = false;
     setMusic(withMusic);
     go(0);

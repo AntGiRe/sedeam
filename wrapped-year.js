@@ -36,7 +36,6 @@ export function buildYear(w, profile, { finalSlide }) {
     el('div', { class: 'k' }, `${profile.avatar} ${profile.name}`),
     el('div', { class: 'year-digits', 'aria-label': y }, [...y].map((d, i) => el('span', { style: `animation-delay:${0.15 + i * 0.12}s` }, d))),
     el('div', { class: 'big' }, 'fue tu año en la sede'),
-    el('div', { class: 'soft' }, w.partial ? `Hemos repasado todo tu ${y} hasta hoy. Prepárate.` : `Hemos repasado todo tu ${y}. Prepárate.`),
   );
 
   const change = w.change == null ? null : w.change >= 0 ? `▲ ${Math.round(w.change * 100)} % más que en ${Number(y) - 1}` : `▼ ${Math.round(-w.change * 100)} % menos que en ${Number(y) - 1}`;
@@ -58,7 +57,7 @@ export function buildYear(w, profile, { finalSlide }) {
     el('div', { class: 'cap-reveal' }, capsule(top.game, { style: 'width:170px;font-size:15px' })),
     el('div', { class: 'big' }, top.game.name),
     el('div', { class: 'med' }, el('span', {}, count(Math.round(top.ms / 3_600_000))), ' horas juntos'),
-    el('div', { class: 'soft' }, top.share > 0.7 ? `El ${Math.round(top.share * 100)} % de tu año. Esto ya no es trabajo, es una relación.` : `El ${Math.round(top.share * 100)} % de tu año. Le eres fiel, pero sin agobiar.`),
+    el('span', { class: 'pill' }, `${Math.round(top.share * 100)} % de tu año${top.share > 0.7 ? ' · esto ya es una relación' : ''}`),
   );
 
   if (w.topMonth != null) {
@@ -76,7 +75,7 @@ export function buildYear(w, profile, { finalSlide }) {
     add('#9b59ff', '#00e0c6', '#fff',
       el('div', { class: 'k' }, 'Tus cuatro temporadas'),
       el('div', { class: 'seasons4' }, w.seasons.map((s, i) => el('div', { style: `--sc:${s.color};animation-delay:${0.2 + i * 0.15}s` }, el('span', { class: 'e' }, s.emoji), el('b', {}, s.quarter), el('span', { class: 't' }, `Nivel ${s.tier}`), el('span', { class: 'md' }, medal(s.tier))))),
-      el('div', { class: 'soft' }, `Mejor temporada: ${[...w.seasons].sort((a, b) => b.tier - a.tier)[0].name} (nivel ${Math.max(...w.seasons.map((s) => s.tier))}).`),
+      el('span', { class: 'pill' }, `🏆 Mejor: ${[...w.seasons].sort((a, b) => b.tier - a.tier)[0].name}`),
     );
   }
 
@@ -88,7 +87,7 @@ export function buildYear(w, profile, { finalSlide }) {
       el('div', { class: 'arrow', 'aria-hidden': 'true' }, up ? '⤵' : '='),
       el('div', { class: 'to' }, el('span', {}, `Nivel ${w.levelEnd.level}`), el('b', {}, w.levelEnd.title)),
     ),
-    el('div', { class: 'soft' }, up ? `${w.levelEnd.level - w.levelStart.level === 1 ? 'Un ascenso' : `${w.levelEnd.level - w.levelStart.level} ascensos`} en un año. Ni en la Administración van tan rápido.` : 'Mismo rango que en enero. La constancia también es un mérito.'),
+    el('span', { class: 'pill' }, up ? `⬆️ ${w.levelEnd.level - w.levelStart.level === 1 ? '1 ascenso' : `${w.levelEnd.level - w.levelStart.level} ascensos`} este año` : 'Mismo rango: constancia pura'),
   );
 
   if (w.hero || w.bestDay) {
@@ -115,7 +114,7 @@ export function buildYear(w, profile, { finalSlide }) {
         el('div', {}, el('b', {}, fmtDur(w.rushMs)), el('span', {}, '🔥 antes de plazo')),
       ),
       w.worstOutage ? el('div', { class: 'big' }, `${w.worstOutage.emoji} ${w.worstOutage.name}`) : null,
-      w.worstOutage ? el('div', { class: 'soft' }, `La web que más te falló: ${w.worstOutage.n} ${w.worstOutage.n === 1 ? 'caída' : 'caídas'}. No es personal… o sí.`) : el('div', { class: 'soft' }, 'Ni una caída en todo el año. Sospechosamente bien.'),
+      w.worstOutage ? el('div', { class: 'soft' }, `La que más te falló: ${w.worstOutage.n} ${w.worstOutage.n === 1 ? 'caída' : 'caídas'}.`) : el('div', { class: 'soft' }, 'Ni una caída en todo el año.'),
     );
   }
 
@@ -124,7 +123,7 @@ export function buildYear(w, profile, { finalSlide }) {
       el('div', { class: 'k' }, 'Tu vitrina del año'),
       el('div', { class: 'mega', style: 'font-size:96px' }, count(w.achievements.length)),
       el('div', { class: 'big' }, `${w.achievements.length === 1 ? 'logro' : 'logros'}${w.challenges ? ` y ${w.challenges} ${w.challenges === 1 ? 'reto' : 'retos'}` : ''}`),
-      el('div', { class: 'badges dark' }, w.achievements.slice(0, 9).map((a) => el('span', {}, a.emoji, a.name))),
+      el('div', { class: 'badges dark' }, w.achievements.slice(0, 9).map((a) => el('span', {}, el('i', { 'aria-hidden': 'true' }, a.emoji), a.name))),
     );
   }
 

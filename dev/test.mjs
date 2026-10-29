@@ -10,6 +10,7 @@ import { validateCatalog, pickCatalog } from '../lib/catalog.js';
 import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, seasonProgress, shiftToWorkday, daysUntil } from '../lib/calendar.js';
 import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
 import { parsePeriod, latestPeriods, computeWrapped, equivalence, yearUnlockDate, isYearUnlocked, featuredYear } from '../lib/wrapped.js';
+import { totalXp, levelOf, grantDailyBonus, dropsCrossed, bonusXp } from '../lib/xp.js';
 import { weekOf, pickChallenges, challengeState, resolveChallenges } from '../lib/challenges.js';
 import { isLoadingUrl, addLoading, outageKind, outageTarget, recordOutage, recordTabs } from '../lib/extras.js';
 
@@ -90,7 +91,8 @@ test('descuenta el rato de inactividad sin dejar negativos', () => {
 test('migra los datos de la versión anterior sin perder nada', () => {
   const v1 = { v: 1, days: { '2026-10-28': { aeat: HOUR } }, hours: { aeat: new Array(24).fill(0) }, longestRun: { game: 'aeat', ms: HOUR, day: '2026-10-28' }, achievements: { clave: 1 }, firstPlayed: {}, lastPlayed: {} };
   const d = migrate(v1);
-  assert.equal(d.v, 4);
+  assert.equal(d.v, 5);
+  assert.deepEqual(d.bonus, {});
   assert.deepEqual(d.challenges, {});
   assert.deepEqual(d.loading, {});
   assert.deepEqual(d.tabs, { all: null, byGame: {} });
@@ -386,6 +388,31 @@ test('wrapped anual: meses, temporadas, niveles y héroe del plazo', () => {
   assert.deepEqual(w.seasons.map((s) => s.id), ['1T-2026', '2T-2026', '3T-2026', '4T-2026']);
   assert.equal(w.aura.length, 2);
   assert.equal(computeWrapped(d, catalog, '2026-04').months, undefined); // el mensual no lleva extras
+});
+
+test('XP: 1 por minuto, bonus diario, retos y píldoras', () => {
+  const d = emptyData();
+  commitSegment(d, 'aeat', t('2026-10-29T09:00'), t('2026-10-29T10:30')); // 90 min
+  assert.equal(totalXp(d), 90);
+  assert.equal(grantDailyBonus(d, t('2026-10-29T09:00')), 10);
+  assert.equal(grantDailyBonus(d, t('2026-10-29T15:00')), 0); // una vez al día
+  assert.equal(totalXp(d), 100);
+  d.challenges['2026-S44'] = { intensiva: { ts: t('2026-10-29T12:00'), xp: 3 } }; // 3 h de reto = 180 XP
+  assert.equal(totalXp(d), 280);
+  assert.equal(bonusXp(d, '2026-10-29', '2026-10-29'), 190);
+  // El nivel cuenta toda la XP: 280 XP = 4,67 h → sigue en Becario, faltan 20 XP para Auxiliar (5 h).
+  const lv = levelOf(d, catalog.levels);
+  assert.equal(lv.title, 'Becario');
+  assert.equal(lv.xpToNext, 20);
+  assert.equal(lv.xpForLevel, 300);
+  // La temporada también: 90 min + 190 XP = 280 XP → nivel 1 (240 XP por nivel), 40 XP dentro.
+  const sp = seasonProgress(d, catalog.seasons, seasonAt(catalog.seasons, new Date(2026, 9, 29)));
+  assert.deepEqual([sp.tier, sp.xpInTier, sp.xpPerTier], [1, 40, 240]);
+  assert.equal(sp.xpToNext, 200);
+  // Píldoras cada 15 minutos.
+  assert.equal(dropsCrossed(14 * MIN, 15 * MIN), 1);
+  assert.equal(dropsCrossed(15 * MIN, 29 * MIN), 0);
+  assert.equal(dropsCrossed(10 * MIN, 46 * MIN), 3); // cruza los minutos 15, 30 y 45
 });
 
 console.log(`\n${ok} pruebas OK`);

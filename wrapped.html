@@ -139,6 +139,8 @@
     .fmts button { background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 999px; padding: 5px 12px; font-size: 12px; position: relative; z-index: 6; }
     .fmts button[aria-pressed="true"] { background: #fff; color: #0a0f15; }
     .locked { text-align: center; align-items: center; }
+    .story.starting #slides, .story.starting .tap { visibility: hidden; }
+    .badges span i { font-style: normal; }
 
     .start { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 40px 28px; background: transparent; color: var(--ink); }
     .start .go { margin-top: 18px; font-size: 16px; font-weight: 800; padding: 14px 18px; border-radius: 999px; border: 0; background: var(--ink); color: var(--c1); }
@@ -159,10 +161,8 @@
       <div class="shapes" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
       <div id="slides"></div>
       <div class="start" id="start" hidden>
-        <div class="k">Sedeam Wrapped</div>
         <div class="year-digits" id="start-year"></div>
         <div class="big">Tu año en la sede</div>
-        <div class="soft">Doce meses de plazos, caídas y Cl@ve, en un par de minutos.</div>
         <button class="go" id="start-music">▶ Empezar con música</button>
         <button class="quiet" id="start-quiet">Empezar sin sonido</button>
       </div>

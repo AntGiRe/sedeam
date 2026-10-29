@@ -860,6 +860,11 @@
   "news": [
     {
       "date": "2026-10-29",
+      "title": "Ahora todo va en XP",
+      "body": "1 minuto en una sede = 1 XP. +10 XP por el primer fichaje del día y +120 a 240 XP por reto. Mientras trabajas, cada 15 minutos verás una píldora de +15 XP en la sede."
+    },
+    {
+      "date": "2026-10-29",
       "title": "Retos semanales, lanzador y pausa activa",
       "body": "Cada lunes, 3 retos nuevos que dan puntos de temporada. Accesos directos a tus trámites desde el popup (añade la página que tengas abierta con un clic) y un recordatorio para estirar las piernas."
     },

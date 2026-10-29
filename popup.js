@@ -1,6 +1,7 @@
-import { HOUR, addDays, dayKey, fmtAgo, fmtDur, fmtHours, sumAll, sumRange, total } from './lib/core.js';
+import { addDays, dayKey, fmtAgo, fmtDur, fmtHours, sumAll, sumRange, total } from './lib/core.js';
 import { daysUntil, seasonAt, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { allGames } from './lib/games.js';
+import { fmtXp } from './lib/xp.js';
 import { LOADING } from './lib/extras.js';
 import { applyTheme, capsule, el, fill, fmtCountdown, loadAll, paintAvatar, profileFor, shortcutsOf, updateAvailable, withLive } from './lib/view.js';
 import { challengeState, pickChallenges, weekOf } from './lib/challenges.js';
@@ -50,7 +51,7 @@ function render() {
     state.live?.game === LOADING ? el('span', { class: 'muted' }, '⏳ En pantalla de carga (identificándote)…') : el('span', { class: 'status-online' }, `Nivel ${lv.level} · ${fmtHours(total(two))} en las últimas 2 semanas`),
   );
   $('xp').style.width = `${Math.round(lv.progress * 100)}%`;
-  $('xp-label').textContent = lv.nextTitle ? `Faltan ${fmtHours(lv.hoursToNext * HOUR)} para ${lv.nextTitle}` : 'Rango máximo. Hacienda te debe una placa.';
+  $('xp-label').textContent = lv.nextTitle ? `${fmtXp(lv.xpInLevel)} / ${fmtXp(lv.xpForLevel)} · siguiente: ${lv.nextTitle}` : `${fmtXp(lv.xp)} · rango máximo`;
   $('total').textContent = `${fmtHours(grand)} en total`;
 
   $('now').hidden = !live;
@@ -73,7 +74,7 @@ function render() {
     const week = weekOf(new Date(now));
     const chs = pickChallenges(catalog.challenges || [], week.id);
     const done = chs.filter((c) => challengeState(c, data, week, new Date(now))?.done).length;
-    $('season-sub').textContent = `${chs.length ? `Retos ${done}/${chs.length} · ` : ''}acaba ${fmtCountdown(daysUntil(season.end, new Date(now)))}`;
+    $('season-sub').textContent = sp.maxed ? '¡Pase completado!' : `${sp.xpInTier}/${sp.xpPerTier} XP${chs.length ? ` · retos ${done}/${chs.length}` : ''}`;
   }
   const next = upcomingDeadlines(catalog.deadlines, new Date(now), { limit: 1 })[0];
   $('deadline').hidden = !next;

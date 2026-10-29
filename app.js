@@ -1,10 +1,11 @@
 import {
-  HOUR, MIN, addDays, bestDay, dayKey, fmtAgo, fmtDur, fmtHours, levelFor, parseKey, streaks, sumAll, sumRange, total,
+  HOUR, MIN, addDays, bestDay, dayKey, fmtAgo, fmtDur, fmtHours, parseKey, streaks, sumAll, sumRange, total,
 } from './lib/core.js';
 import { progress } from './lib/rules.js';
 import { daysUntil, seasonAt, seasonHistory, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { isUnlocked, titleOptions, unlockHint } from './lib/rewards.js';
 import { outageTotals } from './lib/extras.js';
+import { DAILY_BONUS_XP, fmtXp } from './lib/xp.js';
 import { challengeState, pickChallenges, weekOf } from './lib/challenges.js';
 import { isYearUnlocked, latestPeriods, parsePeriod, yearUnlockDate } from './lib/wrapped.js';
 import { allGames, normalizeDomain } from './lib/games.js';
@@ -411,13 +412,13 @@ function buckets() {
 }
 
 function renderProfile() {
+  const lv = me.lv;
   const grand = total(sumAll(data));
-  const lv = levelFor(grand, st.catalog.levels);
   paintAvatar($('p-avatar'), me.profile, lv.level, !!st.live);
   $('p-level').textContent = `Nivel ${lv.level} · ${me.profile.titleText}`;
   $('p-title').textContent = me.profile.name;
   $('p-xp').style.width = `${Math.round(lv.progress * 100)}%`;
-  $('p-xp-label').textContent = lv.nextTitle ? `${fmtHours(grand)} · faltan ${fmtHours(lv.hoursToNext * HOUR)} para ${lv.nextTitle}` : `${fmtHours(grand)} · rango máximo`;
+  $('p-xp-label').textContent = lv.nextTitle ? `${fmtXp(lv.xp)} · faltan ${fmtXp(lv.xpToNext)} para ${lv.nextTitle}` : `${fmtXp(lv.xp)} · rango máximo`;
 
   const now = new Date();
   const today = dayKey(now);
@@ -682,20 +683,21 @@ function renderSeason() {
       {},
       el('div', { class: 'eyebrow', style: 'color:rgba(255,255,255,.7)' }, `Temporada ${season.label}`),
       el('h1', {}, season.name),
-      el('div', { class: 'meta' }, `${fmtD(season.start)} – ${fmtD(season.end)} · termina ${fmtCountdown(left)} · ${fmtHours(sp.playedMs)} jugadas${sp.bonusMs ? ` + ${fmtHours(sp.bonusMs)} de retos` : ''}`),
+      el('div', { class: 'meta' }, `${fmtD(season.start)} – ${fmtD(season.end)} · termina ${fmtCountdown(left)}`),
       el('div', { class: 'xp' }, el('i', { style: `width:${Math.round(sp.progress * 100)}%` })),
-      el('div', { class: 'meta', style: 'margin-top:6px;font-size:12px' }, sp.maxed ? '¡Pase completado! Eres leyenda de esta temporada.' : `${fmtDur(sp.msToNext)} para el nivel ${sp.tier + 1} · ${cfg.hoursPerTier} h por nivel`),
+      el('div', { class: 'meta xp-now' }, sp.maxed ? '¡Pase completado! 🥇' : el('span', {}, el('b', {}, `${sp.xpInTier} / ${fmtXp(sp.xpPerTier)}`), ` → nivel ${sp.tier + 1}`)),
     ),
     el('div', { class: 'tier-ring', style: `--p:${(sp.tier / cfg.tiers) * 100}` }, el('div', {}, el('span', {}, 'NIVEL'), el('b', {}, String(sp.tier)), el('span', {}, `DE ${cfg.tiers}`))),
   );
 
+  renderHowTo(cfg);
   renderChallenges();
 
   // Pista del pase: un hueco por nivel, con su recompensa si la tiene.
   const byTier = {};
   for (const r of st.catalog.rewards || []) if (r.unlock?.seasonTier) (byTier[r.unlock.seasonTier] ||= []).push(r);
   const best = me.ctx.bestTier;
-  $('pass-sub').textContent = `Mejor nivel en cualquier temporada: ${best}. Las recompensas, una vez ganadas, son tuyas para siempre.`;
+  $('pass-sub').textContent = `${fmtXp(cfg.hoursPerTier * 60)} por nivel · lo que ganas es tuyo para siempre${best ? ` · tu récord: nivel ${best}` : ''}`;
   const cells = [];
   for (let n = 1; n <= cfg.tiers; n++) {
     const rs = byTier[n] || [];
@@ -749,6 +751,19 @@ function renderSeason() {
   );
 }
 
+// Cómo se gana XP, en cuatro iconos.
+function renderHowTo(cfg) {
+  const xps = (st.catalog.challenges || []).map((c) => c.xp * 60);
+  const tile = (e, big, small) => el('div', { class: 'how' }, el('span', { class: 'e', 'aria-hidden': 'true' }, e), el('b', {}, big), el('span', {}, small));
+  fill(
+    $('howto'),
+    tile('⏱️', '1 XP por minuto', 'en cualquier sede'),
+    tile('☀️', `+${DAILY_BONUS_XP} XP`, 'primer fichaje del día'),
+    xps.length ? tile('🎯', `+${Math.min(...xps)}–${Math.max(...xps)} XP`, 'por reto semanal') : null,
+    tile('🏅', `${cfg.hoursPerTier * 60} XP = 1 nivel`, `de temporada · ${cfg.tiers} niveles`),
+  );
+}
+
 function renderChallenges() {
   const now = new Date();
   const week = weekOf(now);
@@ -767,7 +782,7 @@ function renderChallenges() {
           return el(
             'div',
             { class: `ch${s.done ? ' done' : ''}${s.failed ? ' failed' : ''}` },
-            el('div', { class: 'top' }, el('span', { class: 'e', 'aria-hidden': 'true' }, ch.emoji), el('div', {}, el('div', { class: 'nm' }, ch.name), el('div', { class: 'xpv' }, `+${ch.xp} h de pase${ch.mode === 'max' ? ' · reto de contención' : ''}`))),
+            el('div', { class: 'top' }, el('span', { class: 'e', 'aria-hidden': 'true' }, ch.emoji), el('div', {}, el('div', { class: 'nm' }, ch.name), el('div', { class: 'xpv' }, `+${fmtXp(ch.xp * 60)}${ch.mode === 'max' ? ' · contención' : ''}`))),
             el('div', { class: 'd' }, ch.desc),
             s.unit !== 'bool' ? el('div', { class: `xp${ch.mode === 'max' ? ' warn' : ''}` }, el('i', { style: `width:${Math.round((s.done && ch.mode !== 'max' ? 1 : s.pct) * 100)}%` })) : null,
             el('div', { class: 'foot' }, el('span', {}, ch.mode === 'max' ? `Llevas ${val.split(' / ')[0]} (máx. ${val.split(' / ')[1]})` : val), el('span', { class: 'tag' }, tag)),
@@ -946,6 +961,7 @@ function renderSettings() {
   $('sound').checked = !!st.settings.sound;
   $('sysnotif').checked = !!st.settings.systemNotifications;
   for (const id of ['toast-page', 'sound', 'sysnotif']) $(id).disabled = !st.settings.notifications;
+  $('xp-toasts').checked = !!st.settings.xpToasts;
   $('break-on').checked = !!st.settings.breakReminder;
   $('break-min').value = String(st.settings.breakMinutes);
   $('break-min').disabled = !st.settings.breakReminder;
@@ -1037,6 +1053,7 @@ function wireSettings() {
   $('idle').addEventListener('change', (e) => updateSettings({ idleMinutes: Number(e.target.value) }));
   $('notif').addEventListener('change', (e) => updateSettings({ notifications: e.target.checked }));
   $('toast-page').addEventListener('change', (e) => updateSettings({ toastInPage: e.target.checked }));
+  $('xp-toasts').addEventListener('change', (e) => updateSettings({ xpToasts: e.target.checked }));
   $('sound').addEventListener('change', (e) => updateSettings({ sound: e.target.checked }));
   $('sysnotif').addEventListener('change', (e) => updateSettings({ systemNotifications: e.target.checked }));
   $('break-on').addEventListener('change', (e) => updateSettings({ breakReminder: e.target.checked }));

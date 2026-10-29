@@ -5,7 +5,8 @@
 //   2. la ventana de Chrome tiene el foco,
 //   3. el usuario no lleva más de N minutos sin tocar ratón/teclado.
 
-import { MIN, commitSegment, uncommitSegment, dayKey, fmtBadge, fmtDur, levelFor, total, sumAll } from './lib/core.js';
+import { MIN, commitSegment, uncommitSegment, dayKey, dayTotal, fmtBadge, fmtDur } from './lib/core.js';
+import { XP_DROP_EVERY, dropsCrossed, fmtXp, grantDailyBonus, levelOf, msToXp } from './lib/xp.js';
 import { evaluate } from './lib/rules.js';
 import { resolveChallenges } from './lib/challenges.js';
 import { featuredYear, latestPeriods, parsePeriod } from './lib/wrapped.js';
@@ -76,7 +77,9 @@ function tick(reason, idleState) {
     const [settings, catalog, data] = await Promise.all([loadSettings(), getCatalog(), loadData()]);
     const idleMs = settings.idleMinutes * MIN;
     const { live, recent = [] } = await chrome.storage.session.get(['live', 'recent']);
-    const levelBefore = levelFor(total(sumAll(data)), catalog.levels).level;
+    const levelBefore = levelOf(data, catalog.levels).level;
+    const todayBefore = dayTotal(data, dayKey(now));
+    const xpItems = [];
     const rewardsBefore = unlockedIds(catalog, rewardContext(data, catalog));
     const season = catalog.seasons ? seasonAt(catalog.seasons, new Date(now)) : null;
     const tierBefore = season ? seasonProgress(data, catalog.seasons, season).tier : 0;
@@ -91,6 +94,9 @@ function tick(reason, idleState) {
         commitAny(data, live.game, live.start, end);
         segs.push({ game: live.game, start: live.start, end });
         changed = true;
+        if (live.game !== LOADING && grantDailyBonus(data, now)) {
+          xpItems.push({ kind: 'xp', emoji: '☀️', label: '+10 XP', name: 'Primer fichaje del día', desc: '¡Buenos días! Bonus por entrar en la sede.' });
+        }
       }
     }
 
@@ -117,9 +123,9 @@ function tick(reason, idleState) {
     const pause = await checkBreak(game, settings, now);
     if (changed || fresh.length || doneChallenges.length) {
       await saveData(data);
-      const items = doneChallenges.map((c) => ({ id: `reto-${c.week.id}-${c.id}`, kind: 'reward', emoji: c.emoji, label: '¡Reto semanal completado!', name: c.name, desc: `+${c.xp} h de pase de temporada` }));
+      const items = doneChallenges.map((c) => ({ id: `reto-${c.week.id}-${c.id}`, kind: 'reward', emoji: c.emoji, label: '¡Reto semanal completado!', name: c.name, desc: `+${fmtXp(c.xp * 60)}` }));
       items.push(...fresh.map((a) => ({ id: `logro-${a.id}`, kind: 'ach', emoji: a.emoji, label: '¡Logro desbloqueado!', name: a.name, desc: a.desc })));
-      const lv = levelFor(total(sumAll(data)), catalog.levels);
+      const lv = levelOf(data, catalog.levels);
       if (lv.level > levelBefore) items.push({ id: `nivel-${lv.level}`, kind: 'level', emoji: '⬆️', label: `¡Nivel ${lv.level}!`, name: lv.title, desc: 'Has subido de rango. Sigue así (o no).' });
       if (season) {
         const tier = seasonProgress(data, catalog.seasons, season).tier;
@@ -139,6 +145,24 @@ function tick(reason, idleState) {
     }
 
     if (pause) await announce([pause], { ...settings, notifications: true });
+
+    // Píldoras de XP: cada 15 minutos jugados hoy, una pequeña recompensa en la propia sede.
+    const drops = dropsCrossed(todayBefore, dayTotal(data, dayKey(now)));
+    if (drops && live && live.game !== LOADING) {
+      const todayMs = dayTotal(data, dayKey(now));
+      const hourHit = Math.floor(todayMs / (60 * MIN)) > Math.floor(todayBefore / (60 * MIN));
+      const sp = season ? seasonProgress(data, catalog.seasons, season) : null;
+      const gameName = enabledGames(catalog, settings).find((g) => g.id === live.game)?.name || '';
+      xpItems.push({
+        kind: 'xp',
+        emoji: hourHit ? '🔥' : '⚡',
+        label: `+${msToXp(XP_DROP_EVERY) * drops} XP`,
+        name: hourHit ? `${Math.floor(todayMs / (60 * MIN))} h hoy en sedes` : gameName,
+        desc: sp ? (sp.maxed ? 'Pase de temporada completado' : `Temporada: nivel ${sp.tier} · ${sp.xpInTier}/${sp.xpPerTier} XP`) : '',
+        progress: sp ? sp.xpInTier / sp.xpPerTier : null,
+      });
+    }
+    if (xpItems.length && settings.xpToasts) await toastInActiveTab(xpItems, { ...settings, sound: false });
 
     await chrome.storage.session.set({ live: game ? { game: game.id, start: now } : null, recent: segs });
     await updateBadge(data, game);

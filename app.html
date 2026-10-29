@@ -216,6 +216,14 @@
     .tier-ring b { font-size: 40px; font-weight: 900; line-height: 1; }
     .tier-ring span { font-size: 10px; letter-spacing: .14em; color: rgba(255,255,255,.6); }
 
+    .howto { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .how { display: grid; grid-template-columns: 36px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 12px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+    .how .e { grid-row: span 2; font-size: 26px; text-align: center; }
+    .how b { font-size: 15px; }
+    .how span:last-child { font-size: 12px; color: var(--muted); }
+    .xp-now { margin-top: 8px; font-size: 13px; }
+    .xp-now b { color: #fff; font-size: 15px; font-variant-numeric: tabular-nums; }
+    @media (max-width: 900px) { .howto { grid-template-columns: 1fr 1fr; } }
     .pass { display: grid; grid-auto-flow: column; grid-auto-columns: 84px; gap: 6px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x proximity; }
     .tier { scroll-snap-align: center; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); padding: 8px 6px 10px; text-align: center; position: relative; }
     .tier .n { font-size: 11px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -390,6 +398,7 @@
     <!-- TEMPORADA -->
     <section class="view" id="temporada" hidden>
       <div class="season-hero" id="season-hero"></div>
+      <div class="howto" id="howto" aria-label="Cómo se gana XP"></div>
       <div class="card">
         <div class="card-head"><h2>Retos de la semana</h2><span class="muted" id="ch-sub"></span></div>
         <div class="challenges" id="challenges"></div>
@@ -532,6 +541,7 @@
       <div class="card" id="avisos">
         <h3>Avisos de logros</h3>
         <div class="field"><input type="checkbox" id="notif"><label for="notif">Avisarme al desbloquear un logro o subir de nivel</label></div>
+        <div class="field"><input type="checkbox" id="xp-toasts"><label for="xp-toasts">Píldoras de «+15 XP» en la sede mientras trabajas</label></div>
         <div class="field"><input type="checkbox" id="toast-page"><label for="toast-page">Mostrar la tarjeta dentro de la sede que tengo abierta, como en los juegos</label></div>
         <div class="field"><input type="checkbox" id="sound"><label for="sound">Con sonido</label></div>
         <div class="field"><input type="checkbox" id="sysnotif"><label for="sysnotif">Si no se puede mostrar en la página, usar la notificación del sistema</label></div>
