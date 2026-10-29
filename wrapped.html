@@ -68,6 +68,85 @@
     .reveal > *:nth-child(4) { animation-delay: .36s; } .reveal > *:nth-child(5) { animation-delay: .48s; } .reveal > *:nth-child(6) { animation-delay: .6s; }
     @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.98); } }
     @media (prefers-reduced-motion: reduce) { .reveal > * { animation: none; } }
+    /* ---------- Modo anual ---------- */
+    body.year .story { background: var(--c1); color: var(--ink); transition: background .7s ease, color .4s; }
+    body.year .story::before { background: radial-gradient(rgba(0,0,0,.09) 1px, transparent 1.2px) 0 0 / 5px 5px; }
+    body.year .head { color: color-mix(in srgb, var(--ink) 70%, transparent); }
+    body.year .head button { background: color-mix(in srgb, var(--ink) 16%, transparent); color: var(--ink); }
+    body.year .bars span { background: color-mix(in srgb, var(--ink) 25%, transparent); }
+    body.year .bars span i { background: var(--ink); }
+    body.year .k { color: color-mix(in srgb, var(--ink) 75%, transparent); }
+    body.year .soft { color: color-mix(in srgb, var(--ink) 82%, transparent); }
+    body.year .pill { background: color-mix(in srgb, var(--ink) 14%, transparent); }
+    body.year .stats3 div { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+    body.year .stats3 span { color: color-mix(in srgb, var(--ink) 70%, transparent); }
+    body.year .slide { z-index: 1; }
+
+    .shapes { display: none; position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    body.year .shapes { display: block; }
+    .shapes i { position: absolute; border-radius: 50%; background: var(--c2); opacity: .55; transition: background .7s; animation: float 14s ease-in-out infinite alternate; }
+    .shapes i:nth-child(1) { width: 340px; height: 340px; top: -120px; right: -110px; }
+    .shapes i:nth-child(2) { width: 220px; height: 220px; bottom: -70px; left: -60px; animation-duration: 11s; animation-direction: alternate-reverse; }
+    .shapes i:nth-child(3) { width: 90px; height: 90px; bottom: 140px; right: 30px; opacity: .8; animation-duration: 8s; }
+    .shapes b { position: absolute; width: 420px; height: 420px; left: -150px; top: 30%; border-radius: 50%; border: 3px dashed color-mix(in srgb, var(--ink) 18%, transparent); animation: spin 40s linear infinite; }
+    @keyframes float { to { transform: translate(-30px, 40px) scale(1.12); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .mega { font-size: 104px; font-weight: 900; letter-spacing: -.045em; line-height: .9; font-variant-numeric: tabular-nums; }
+    .year-digits { display: flex; font-size: 150px; font-weight: 900; letter-spacing: -.07em; line-height: .82; }
+    .year-digits span { display: inline-block; animation: drop .7s cubic-bezier(.2,1.3,.4,1) both; }
+    @keyframes drop { from { opacity: 0; transform: translateY(-70px) rotate(-10deg); } }
+
+    .top5 { display: grid; gap: 10px; }
+    .top5 .row { display: grid; grid-template-columns: 34px 46px 1fr; gap: 12px; align-items: center; animation: pop .5s cubic-bezier(.2,1.2,.4,1) both; }
+    .top5 .n { font-size: 34px; font-weight: 900; opacity: .55; text-align: center; }
+    .top5 b { display: block; font-size: 17px; }
+    .top5 span { font-size: 12.5px; opacity: .8; }
+    @keyframes pop { from { opacity: 0; transform: translateX(40px) scale(.9); } }
+
+    .cap-reveal { align-self: center; animation: spinIn 1s cubic-bezier(.2,1.1,.3,1) both; }
+    @keyframes spinIn { from { opacity: 0; transform: rotate(-200deg) scale(.2); } to { transform: rotate(-5deg); } }
+
+    .months { display: flex; align-items: flex-end; gap: 6px; height: 170px; }
+    .months .m { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+    .months i { width: 100%; height: var(--h); border-radius: 5px 5px 0 0; background: color-mix(in srgb, var(--ink) 30%, transparent); animation: grow .8s cubic-bezier(.2,1,.3,1) both; }
+    .months .m.top i { background: var(--ink); }
+    .months span { font-size: 11px; font-weight: 800; opacity: .75; }
+    @keyframes grow { from { height: 0; } }
+
+    .seasons4 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .seasons4 > div { border-radius: 14px; padding: 14px; background: color-mix(in srgb, var(--sc) 70%, #000); display: grid; gap: 2px; animation: pop .5s cubic-bezier(.2,1.2,.4,1) both; position: relative; }
+    .seasons4 .e { font-size: 30px; }
+    .seasons4 b { font-size: 22px; font-weight: 900; }
+    .seasons4 .t { font-size: 12px; opacity: .85; }
+    .seasons4 .md { position: absolute; right: 12px; top: 10px; font-size: 26px; }
+
+    .journey { display: grid; gap: 6px; }
+    .journey .from, .journey .to { border-radius: 14px; padding: 14px 16px; }
+    .journey .from { background: color-mix(in srgb, var(--ink) 10%, transparent); opacity: .85; }
+    .journey .to { background: color-mix(in srgb, var(--ink) 92%, transparent); color: var(--c1); animation: pop .6s .5s cubic-bezier(.2,1.2,.4,1) both; }
+    .journey span { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .75; }
+    .journey b { display: block; font-size: 26px; font-weight: 900; }
+    .journey .arrow { font-size: 40px; text-align: center; line-height: 1; }
+
+    .aura { width: 230px; height: 230px; align-self: center; border-radius: 50%; display: grid; place-items: center; position: relative; }
+    .aura::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(var(--a1), var(--a2), var(--a1)); filter: blur(28px); animation: spin 6s linear infinite; }
+    .aura span { position: relative; font-size: 84px; }
+
+    .badges.dark span { background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--ink); box-shadow: none; }
+    .final img.tall { width: auto; max-height: 430px; align-self: center; }
+    .fmts { display: flex; justify-content: center; gap: 6px; }
+    .fmts button { background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 999px; padding: 5px 12px; font-size: 12px; position: relative; z-index: 6; }
+    .fmts button[aria-pressed="true"] { background: #fff; color: #0a0f15; }
+    .locked { text-align: center; align-items: center; }
+
+    .start { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 40px 28px; background: transparent; color: var(--ink); }
+    .start .go { margin-top: 18px; font-size: 16px; font-weight: 800; padding: 14px 18px; border-radius: 999px; border: 0; background: var(--ink); color: var(--c1); }
+    .start .quiet { border: 0; background: none; color: var(--ink); text-decoration: underline; opacity: .8; }
+    @media (prefers-reduced-motion: reduce) {
+      .shapes i, .shapes b, .aura::before, .year-digits span, .top5 .row, .cap-reveal, .months i, .seasons4 > div, .journey .to { animation: none; }
+    }
+
     .hint { position: fixed; bottom: 14px; left: 0; right: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,.4); }
     .empty-state { text-align: center; align-items: center; }
   </style>
@@ -76,8 +155,17 @@
   <div class="stage">
     <div class="story" id="story">
       <div class="bars" id="bars"></div>
-      <div class="head"><span>SEDEAM WRAPPED</span><span><button id="pause" aria-label="Pausar">❚❚</button> <button id="close" aria-label="Cerrar">✕</button></span></div>
+      <div class="head"><span>SEDEAM WRAPPED</span><span><button id="music" aria-label="Poner música" hidden>🔇</button> <button id="pause" aria-label="Pausar">❚❚</button> <button id="close" aria-label="Cerrar">✕</button></span></div>
+      <div class="shapes" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
       <div id="slides"></div>
+      <div class="start" id="start" hidden>
+        <div class="k">Sedeam Wrapped</div>
+        <div class="year-digits" id="start-year"></div>
+        <div class="big">Tu año en la sede</div>
+        <div class="soft">Doce meses de plazos, caídas y Cl@ve, en un par de minutos.</div>
+        <button class="go" id="start-music">▶ Empezar con música</button>
+        <button class="quiet" id="start-quiet">Empezar sin sonido</button>
+      </div>
       <div class="tap l" id="tap-prev" aria-hidden="true"></div>
       <div class="tap r" id="tap-next" aria-hidden="true"></div>
     </div>

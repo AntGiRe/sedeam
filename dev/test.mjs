@@ -9,7 +9,7 @@ import { matchGame, normalizeDomain, allGames } from '../lib/games.js';
 import { validateCatalog, pickCatalog } from '../lib/catalog.js';
 import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, seasonProgress, shiftToWorkday, daysUntil } from '../lib/calendar.js';
 import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
-import { parsePeriod, latestPeriods, computeWrapped, equivalence } from '../lib/wrapped.js';
+import { parsePeriod, latestPeriods, computeWrapped, equivalence, yearUnlockDate, isYearUnlocked, featuredYear } from '../lib/wrapped.js';
 import { weekOf, pickChallenges, challengeState, resolveChallenges } from '../lib/challenges.js';
 import { isLoadingUrl, addLoading, outageKind, outageTarget, recordOutage, recordTabs } from '../lib/extras.js';
 
@@ -319,6 +319,7 @@ test('wrapped: periodos', () => {
   assert.equal(parsePeriod('basura'), null);
   assert.deepEqual(latestPeriods(new Date(2026, 9, 29)), ['2026-09']);
   assert.deepEqual(latestPeriods(new Date(2027, 0, 3)), ['2026', '2026-12']);
+  assert.deepEqual(latestPeriods(new Date(2026, 11, 9)), ['2026', '2026-11']);
   assert.equal(equivalence(10 * MIN), null);
   assert.match(equivalence(10 * HOUR).text, /^\d+ /);
 });
@@ -350,6 +351,41 @@ test('wrapped: números y personalidad', () => {
   assert.equal(empty.bestDay, null);
   // Año completo.
   assert.equal(computeWrapped(d, catalog, '2026').totalMs, 32 * HOUR);
+});
+
+test('wrapped anual: se desbloquea la segunda semana de diciembre', () => {
+  assert.equal(dayKeyOf(yearUnlockDate(2026)), '2026-12-07'); // el 1 cae en martes
+  assert.equal(dayKeyOf(yearUnlockDate(2025)), '2025-12-08'); // el 1 cae en lunes: la segunda semana empieza el 8
+  assert.equal(dayKeyOf(yearUnlockDate(2024)), '2024-12-02'); // el 1 cae en domingo
+  assert.ok(!isYearUnlocked(2026, new Date(2026, 11, 6, 23, 59)));
+  assert.ok(isYearUnlocked(2026, new Date(2026, 11, 7, 0, 0)));
+  assert.equal(featuredYear(new Date(2026, 10, 30)), null);
+  assert.equal(featuredYear(new Date(2026, 11, 20)), '2026');
+  assert.equal(featuredYear(new Date(2027, 0, 20)), '2026');
+  assert.equal(featuredYear(new Date(2027, 1, 1)), null);
+});
+
+test('wrapped anual: meses, temporadas, niveles y héroe del plazo', () => {
+  const d = emptyData();
+  commitSegment(d, 'aeat', t('2025-12-10T09:00'), t('2025-12-11T09:00')); // 24 h el año anterior
+  commitSegment(d, 'aeat', t('2026-04-20T08:00'), t('2026-04-20T18:00')); // día de plazo del 1T: 10 h
+  commitSegment(d, 'segsocial', t('2026-04-21T09:00'), t('2026-04-21T12:00'));
+  commitSegment(d, 'aeat', t('2026-07-01T09:00'), t('2026-07-01T11:00'));
+  d.outages['2026-04-20'] = { aeat: 3 };
+  d.outages['2026-05-02'] = { clave: 1 };
+  const w = computeWrapped(d, catalog, '2026');
+  assert.equal(w.totalMs, 15 * HOUR);
+  assert.equal(w.months[3], 13 * HOUR);
+  assert.equal(w.topMonth, 3);
+  assert.equal(w.monthName, 'abril');
+  assert.equal(w.levelStart.title, 'Auxiliar administrativo'); // 24 h antes de 2026
+  assert.equal(w.levelEnd.title, 'Oficial de 2ª'); // 39 h al acabar
+  assert.equal(w.hero.day, '2026-04-20');
+  assert.equal(w.hero.ms, 10 * HOUR);
+  assert.deepEqual([w.worstOutage.id, w.worstOutage.n], ['aeat', 3]);
+  assert.deepEqual(w.seasons.map((s) => s.id), ['1T-2026', '2T-2026', '3T-2026', '4T-2026']);
+  assert.equal(w.aura.length, 2);
+  assert.equal(computeWrapped(d, catalog, '2026-04').months, undefined); // el mensual no lleva extras
 });
 
 console.log(`\n${ok} pruebas OK`);

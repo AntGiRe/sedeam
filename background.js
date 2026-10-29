@@ -8,7 +8,7 @@
 import { MIN, commitSegment, uncommitSegment, dayKey, fmtBadge, fmtDur, levelFor, total, sumAll } from './lib/core.js';
 import { evaluate } from './lib/rules.js';
 import { resolveChallenges } from './lib/challenges.js';
-import { latestPeriods, parsePeriod } from './lib/wrapped.js';
+import { featuredYear, latestPeriods, parsePeriod } from './lib/wrapped.js';
 import { daysUntil, seasonAt, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { rewardContext, unlockedIds } from './lib/rewards.js';
 import { enabledGames, matchGame } from './lib/games.js';
@@ -264,17 +264,21 @@ async function checkDeadlines() {
   if (items.length) await announce(items, settings);
 }
 
-// Primera semana de cada mes (desde las 9:00): aviso de que el Wrapped del mes pasado está listo.
+// Desde las 9:00: aviso del Wrapped del año (a partir de la segunda semana de diciembre) y, la primera
+// semana de cada mes, del Wrapped del mes pasado. Cada uno, una sola vez.
 async function checkWrapped() {
   const now = new Date();
-  if (now.getDate() > 7 || now.getHours() < 9) return;
+  if (now.getHours() < 9) return;
   const [settings, data, { wrappedSeen = [] }] = await Promise.all([loadSettings(), loadData(), chrome.storage.local.get('wrappedSeen')]);
   const items = [];
   for (const id of latestPeriods(now)) {
+    if (id !== featuredYear(now) && now.getDate() > 7) continue;
     if (wrappedSeen.includes(id) || !Object.keys(data.days).some((k) => k.startsWith(id))) continue;
     const p = parsePeriod(id);
     wrappedSeen.push(id);
-    items.push({ id: `wrapped-${id}`, kind: 'reward', emoji: '🎁', label: 'Tu Wrapped está listo', name: p.kind === 'year' ? `Tu ${p.name} en ${BRAND.name}` : `Tu ${p.name} en ${BRAND.name}`, desc: 'Ábrelo desde el popup o en Estadísticas. Trae tarjeta para compartir.' });
+    items.push(p.kind === 'year'
+      ? { id: `wrapped-${id}`, kind: 'reward', emoji: '🎁', label: `¡Llegó el ${BRAND.name} Wrapped ${p.name}!`, name: `Tu ${p.name} en la sede, en un par de minutos`, desc: 'Con música, tus 4 temporadas, tu aura fiscal y tarjeta para compartir.' }
+      : { id: `wrapped-${id}`, kind: 'reward', emoji: '🎁', label: 'Tu Wrapped está listo', name: `Tu ${p.name} en ${BRAND.name}`, desc: 'Ábrelo desde el popup o en Estadísticas. Trae tarjeta para compartir.' });
   }
   if (!items.length) return;
   await chrome.storage.local.set({ wrappedSeen: wrappedSeen.slice(-40) });

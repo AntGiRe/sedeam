@@ -1,12 +1,15 @@
 import { MIN, fmtDur, fmtHours, parseKey } from './lib/core.js';
 import { allGames } from './lib/games.js';
-import { computeWrapped, latestPeriods, parsePeriod } from './lib/wrapped.js';
-import { drawShareCard } from './lib/sharecard.js';
+import { computeWrapped, isYearUnlocked, latestPeriods, parsePeriod } from './lib/wrapped.js';
+import { drawShareCard, drawYearCard } from './lib/sharecard.js';
+import { createMusic } from './lib/music.js';
+import { buildLocked, buildYear } from './wrapped-year.js';
 import { applyTheme, capsule, el, fill, loadAll, profileFor } from './lib/view.js';
 import { BRAND } from './config.js';
 
 const $ = (id) => document.getElementById(id);
-const SLIDE_MS = 7000;
+let slideMs = 7000;
+const music = createMusic();
 
 let slides = [];
 let index = 0;
@@ -104,46 +107,58 @@ function build(w, profile, st) {
     el('div', { class: 'soft' }, w.personality.desc),
   );
 
-  // Final: la tarjeta para compartir.
-  const canvas = drawShareCard(w, profile, { brand: BRAND.name.toUpperCase() });
-  const img = el('img', { alt: `Resumen de ${p.label} en ${BRAND.name}: ${fmtHours(w.totalMs)}` });
-  img.src = canvas.toDataURL('image/png');
-  const msg = el('div', { class: 'msg' });
-  const file = `${BRAND.name.toLowerCase()}-wrapped-${p.id}.png`;
-  out.push({
-    c1: '#2a78d6',
-    c2: '#0a0f15',
-    final: true,
-    node: el(
-      'div',
-      { class: 'slide final' },
-      el('div', { class: 'k', style: 'text-align:center' }, 'Tu tarjeta para compartir'),
-      img,
-      el(
-        'div',
-        { class: 'acts' },
-        el('button', { class: 'primary', onclick: () => {
-          const a = el('a', { href: img.src, download: file });
-          document.body.append(a);
-          a.click();
-          a.remove();
-          msg.textContent = 'Imagen descargada.';
-        } }, '⬇️ Descargar'),
-        el('button', { onclick: () => canvas.toBlob(async (blob) => {
-          try {
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-            msg.textContent = 'Copiada. Pégala en WhatsApp o donde quieras.';
-          } catch {
-            msg.textContent = 'No se ha podido copiar; usa «Descargar».';
-          }
-        }) }, '📋 Copiar'),
-        el('button', { onclick: () => go(0) }, '↺ Otra vez'),
-        periodPicker(st, p.id),
-      ),
-      msg,
-    ),
-  });
+  out.push(makeFinal(w, profile, st));
   return out;
+}
+
+// Última pantalla: la(s) tarjeta(s) para compartir. El año trae dos formatos: historia y vertical.
+function makeFinal(w, profile, st) {
+  const p = w.period;
+  const cards = p.kind === 'year'
+    ? [{ label: 'Historia', canvas: drawYearCard(w, profile, { brand: BRAND.name.toUpperCase() }) }, { label: 'Vertical', canvas: drawShareCard(w, profile, { brand: BRAND.name.toUpperCase() }) }]
+    : [{ label: 'Imagen', canvas: drawShareCard(w, profile, { brand: BRAND.name.toUpperCase() }) }];
+  let current = 0;
+  const img = el('img', { alt: `Resumen de ${p.label} en ${BRAND.name}: ${fmtHours(w.totalMs)}` });
+  const show = (k) => {
+    current = k;
+    img.src = cards[k].canvas.toDataURL('image/png');
+    img.classList.toggle('tall', cards[k].canvas.height > cards[k].canvas.width * 1.5);
+    tabs.forEach((t, n) => t.setAttribute('aria-pressed', String(n === k)));
+  };
+  const tabs = cards.map((c, k) => el('button', { class: 'fmt', onclick: () => show(k) }, c.label));
+  const msg = el('div', { class: 'msg' });
+  const file = () => `${BRAND.name.toLowerCase()}-wrapped-${p.id}${cards.length > 1 ? `-${cards[current].label.toLowerCase()}` : ''}.png`;
+  const node = el(
+    'div',
+    { class: 'slide final' },
+    el('div', { class: 'k', style: 'text-align:center' }, 'Tu tarjeta para compartir'),
+    cards.length > 1 ? el('div', { class: 'fmts' }, tabs) : null,
+    img,
+    el(
+      'div',
+      { class: 'acts' },
+      el('button', { class: 'primary', onclick: () => {
+        const a = el('a', { href: img.src, download: file() });
+        document.body.append(a);
+        a.click();
+        a.remove();
+        msg.textContent = 'Imagen descargada.';
+      } }, '⬇️ Descargar'),
+      el('button', { onclick: () => cards[current].canvas.toBlob(async (blob) => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          msg.textContent = 'Copiada. Pégala en WhatsApp o donde quieras.';
+        } catch {
+          msg.textContent = 'No se ha podido copiar; usa «Descargar».';
+        }
+      }) }, '📋 Copiar'),
+      el('button', { onclick: () => go(0) }, '↺ Otra vez'),
+      periodPicker(st, p.id),
+    ),
+    msg,
+  );
+  show(0);
+  return { c1: '#2a78d6', c2: '#0a0f15', ink: '#fff', final: true, node };
 }
 
 function periodPicker(st, current) {
@@ -164,7 +179,7 @@ function periodPicker(st, current) {
 function paintBars() {
   [...$('bars').children].forEach((b, i) => {
     b.className = i < index ? 'done' : '';
-    b.firstChild.style.width = i < index ? '100%' : i === index ? `${Math.min(100, (elapsed / SLIDE_MS) * 100)}%` : '0';
+    b.firstChild.style.width = i < index ? '100%' : i === index ? `${Math.min(100, (elapsed / slideMs) * 100)}%` : '0';
   });
 }
 
@@ -175,6 +190,8 @@ function go(i) {
   const s = slides[index];
   $('story').style.setProperty('--c1', s.c1);
   $('story').style.setProperty('--c2', s.c2);
+  $('story').style.setProperty('--ink', s.ink || '#fff');
+  countUp(s.node);
   $('story').classList.toggle('final-open', !!s.final);
   slides.forEach((x, k) => (x.node.hidden = k !== index));
   // Reinicia las animaciones de entrada.
@@ -184,10 +201,39 @@ function go(i) {
   paintBars();
 }
 
+// Los números marcados con data-count suben desde 0 al aparecer su pantalla.
+function countUp(root) {
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for (const n of root.querySelectorAll('[data-count]')) {
+    const to = Number(n.dataset.count);
+    const fmt = (v) => Math.round(v).toLocaleString('es-ES');
+    if (reduced || !to) {
+      n.textContent = fmt(to);
+      continue;
+    }
+    const t0 = performance.now();
+    const dur = 1600;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur);
+      n.textContent = fmt(to * (1 - (1 - k) ** 3));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    n.textContent = '0';
+    requestAnimationFrame(step);
+  }
+}
+
+function setMusic(on) {
+  if (on) music.start();
+  else music.stop();
+  $('music').textContent = on ? '🔊' : '🔇';
+  $('music').setAttribute('aria-label', on ? 'Quitar música' : 'Poner música');
+}
+
 function loop(now) {
   if (!paused && !slides[index]?.final) {
     elapsed += now - started;
-    if (elapsed >= SLIDE_MS) go(index + 1);
+    if (elapsed >= slideMs) go(index + 1);
   }
   started = now;
   paintBars();
@@ -208,7 +254,18 @@ async function main() {
   const id = params.get('periodo') && parsePeriod(params.get('periodo')) ? params.get('periodo') : latestPeriods()[0];
   const w = computeWrapped(st.data, st.catalog, id, allGames(st.catalog, st.settings));
   document.title = `${BRAND.name} Wrapped · ${w.period.label}`;
-  slides = build(w, profile, st);
+  const isYear = w.period.kind === 'year';
+  document.body.classList.toggle('year', isYear);
+  // ?forzar=1 deja ver el del año antes de tiempo (para probar).
+  const locked = isYear && !isYearUnlocked(Number(w.period.id)) && !params.has('forzar');
+  if (isYear) slideMs = 8000;
+  slides = !isYear ? build(w, profile, st) : locked ? buildLocked(w) : buildYear(w, profile, { finalSlide: () => makeFinal(w, profile, st) });
+  // El del año empieza con una pantalla de inicio (el clic permite además poner música).
+  if (isYear && !locked) {
+    setPaused(true);
+    $('start').hidden = false;
+    $('start-year').textContent = w.period.name;
+  }
   fill($('slides'), slides.map((s) => s.node));
   fill($('bars'), slides.map(() => el('span', {}, el('i'))));
   go(0);
@@ -219,6 +276,16 @@ async function main() {
 $('tap-next').addEventListener('click', () => go(index + 1));
 $('tap-prev').addEventListener('click', () => go(index - 1));
 $('pause').addEventListener('click', () => setPaused(!paused));
+$('music').addEventListener('click', () => setMusic(!music.playing));
+for (const [id, withMusic] of [['start-music', true], ['start-quiet', false]]) {
+  $(id).addEventListener('click', () => {
+    $('start').hidden = true;
+    $('music').hidden = false;
+    setMusic(withMusic);
+    go(0);
+    setPaused(false);
+  });
+}
 $('close').addEventListener('click', () => (history.length > 1 ? history.back() : window.close()));
 document.addEventListener('keydown', (e) => {
   if (e.target.closest?.('select')) return;
@@ -232,6 +299,9 @@ document.addEventListener('keydown', (e) => {
 // Mantener pulsado pausa, como en las historias.
 $('tap-next').addEventListener('pointerdown', () => setPaused(true));
 $('tap-next').addEventListener('pointerup', () => setPaused(false));
-document.addEventListener('visibilitychange', () => setPaused(document.hidden));
+document.addEventListener('visibilitychange', () => {
+  setPaused(document.hidden);
+  if (document.hidden && music.playing) setMusic(false);
+});
 
 main();
