@@ -14,7 +14,7 @@ import { getCatalog, refreshRemoteCatalog } from './lib/catalog.js';
 import { checkForUpdates } from './lib/updates.js';
 import { loadData, saveData, loadSettings } from './lib/store.js';
 import { showToasts } from './lib/toast.js';
-import { LOADING, addLoading, isLoadingUrl, outageKind, recordOutage, recordTabs } from './lib/extras.js';
+import { LOADING, addLoading, isLoadingUrl, outageKind, outageTarget, recordOutage, recordTabs } from './lib/extras.js';
 import { BRAND } from './config.js';
 
 const TICK = 'tick';
@@ -238,7 +238,8 @@ async function runUpdates() {
 }
 
 // ---------- Caídas de la sede ----------
-// Se escuchan solo las cargas de página (no imágenes ni scripts) de las webs con permiso. Si la misma
+// Se escuchan solo las cargas de página (no imágenes ni scripts) de las webs con permiso: las sedes y la
+// infraestructura común (Cl@ve, Red SARA, FNMT). Si la misma
 // pestaña falla varias veces seguidas en 20 segundos cuenta como una sola caída.
 
 const lastOutage = new Map(); // `${tabId}:${game}` → ts
@@ -248,7 +249,7 @@ function onOutage(details) {
   if (!kind || details.tabId < 0) return;
   serial(async () => {
     const [settings, catalog, data] = await Promise.all([loadSettings(), getCatalog(), loadData()]);
-    const game = matchGame(details.url, enabledGames(catalog, settings));
+    const game = outageTarget(details.url, enabledGames(catalog, settings), catalog.infra);
     if (!game) return;
     const key = `${details.tabId}:${game.id}`;
     const now = Date.now();
@@ -260,7 +261,7 @@ function onOutage(details) {
     const items = [];
     // Aviso de la caída solo la primera vez del día en cada sede, para no echar sal en la herida.
     const today = data.outages[dayKey(now)][game.id];
-    if (today === 1) items.push({ id: `caida-${game.id}-${now}`, kind: 'info', emoji: '💥', label: `${game.name} se ha caído (${kind})`, name: `Caída nº ${totals.game} de esta sede`, desc: 'Respira y reintenta. Queda apuntado en tus estadísticas.' });
+    if (today === 1) items.push({ id: `caida-${game.id}-${now}`, kind: 'info', emoji: '💥', label: `${game.name} se ha caído (${kind})`, name: `Caída nº ${totals.game} de ${game.name}`, desc: 'Respira y reintenta. Queda apuntado en tus estadísticas.' });
     items.push(...fresh.map((a) => ({ id: `logro-${a.id}`, kind: 'ach', emoji: a.emoji, label: '¡Logro desbloqueado!', name: a.name, desc: a.desc })));
     if (fresh.length) {
       const { unseen = [] } = await chrome.storage.local.get('unseen');

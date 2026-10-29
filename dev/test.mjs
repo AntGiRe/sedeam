@@ -9,7 +9,7 @@ import { matchGame, normalizeDomain, allGames } from '../lib/games.js';
 import { validateCatalog, pickCatalog } from '../lib/catalog.js';
 import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, shiftToWorkday, daysUntil } from '../lib/calendar.js';
 import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
-import { isLoadingUrl, addLoading, outageKind, recordOutage, recordTabs } from '../lib/extras.js';
+import { isLoadingUrl, addLoading, outageKind, outageTarget, recordOutage, recordTabs } from '../lib/extras.js';
 
 const catalogJson = JSON.parse(readFileSync(new URL('../catalog.json', import.meta.url)));
 const catalog = validateCatalog(catalogJson);
@@ -225,6 +225,36 @@ test('récord de pestañas: malabarista y pulpo', () => {
   recordTabs(d, { aeat: 6, segsocial: 4 }, 4);
   fresh = evaluate(d, catalog.achievements).map((a) => a.id);
   assert.ok(fresh.includes('pulpo'));
+});
+
+test('caídas de Cl@ve, Red SARA y FNMT', () => {
+  const games = allGames(catalog, {});
+  const who = (u) => outageTarget(u, games, catalog.infra)?.id ?? null;
+  assert.equal(who('https://dehu.redsara.es/es/notificaciones'), 'dehu'); // DEHú sigue siendo su juego
+  assert.equal(who('https://rec.redsara.es/registro/action/are/acceso.do'), 'redsara');
+  assert.equal(who('https://valide.redsara.es/valide/'), 'redsara');
+  assert.equal(who('https://pasarela.clave.gob.es/Proxy2/ServiceProvider'), 'clave');
+  assert.equal(who('https://www.sede.fnmt.gob.es/certificados'), 'fnmt');
+  assert.equal(who('https://sede.agenciatributaria.gob.es/'), 'aeat');
+  assert.equal(who('https://www.google.com/'), null);
+  // Cada dominio de infraestructura tiene permiso en el manifiesto (si no, Chrome no avisaría del error).
+  for (const x of catalog.infra) for (const d of x.domains) {
+    assert.ok(manifest.host_permissions.some((h) => { const m = h.match(/^https:\/\/(\*\.)?([^/]+)\//); return m && (d === m[2] || d.endsWith('.' + m[2])); }), `sin permiso: ${d}`);
+  }
+  const d = emptyData();
+  recordOutage(d, 'clave', t('2026-10-20T09:00'));
+  recordOutage(d, 'redsara', t('2026-10-20T09:10'));
+  const fresh = evaluate(d, catalog.achievements, t('2026-10-21T00:00')).map((a) => a.id);
+  assert.ok(fresh.includes('caida-clave'));
+  assert.ok(!fresh.includes('apagon'));
+  recordOutage(d, 'aeat', t('2026-10-20T09:20'));
+  assert.ok(evaluate(d, catalog.achievements).map((a) => a.id).includes('apagon')); // 3 webs distintas el mismo día
+});
+
+test('cada sede del catálogo tiene permiso para avisos y caídas', () => {
+  for (const g of catalog.games) for (const dom of g.domains) {
+    assert.ok(manifest.host_permissions.some((h) => { const m = h.match(/^https:\/\/(\*\.)?([^/]+)\//); return m && (dom === m[2] || (m[1] && dom.endsWith('.' + m[2]))); }), `sin permiso: ${dom}`);
+  }
 });
 
 console.log(`\n${ok} pruebas OK`);

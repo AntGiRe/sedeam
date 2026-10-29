@@ -564,15 +564,21 @@ function renderNomina() {
   const perGame = {};
   for (const day of Object.values(data.outages)) for (const [g, n] of Object.entries(day)) perGame[g] = (perGame[g] || 0) + n;
   const worst = Object.entries(perGame).sort((a, b) => b[1] - a[1])[0];
+  const nameOf = (id) => byId[id]?.name || (st.catalog.infra || []).find((x) => x.id === id)?.name || id;
   const tabsAll = data.tabs.all;
   const bestGameTabs = Object.entries(data.tabs.byGame).sort((a, b) => b[1].count - a[1].count)[0];
   const card = (ico, label, v, sub, joke) => el('div', { class: 'nm-card' }, el('div', { class: 'big-ico', 'aria-hidden': 'true' }, ico), el('div', { class: 'eyebrow' }, label), el('div', { class: 'v' }, v), el('div', { class: 's' }, sub), joke ? el('div', { class: 'joke' }, joke) : null);
   const loadJoke = loadTotal >= 3600_000 ? `Con ese tiempo te daba para ver ${Math.floor(loadTotal / (110 * 60_000))} películas.` : loadTotal ? 'Cada vez que entras, Cl@ve te pregunta quién eres. Filosófico.' : 'Aún no has tenido que demostrar que eres tú. Disfrútalo.';
+  const infoOf = (id) => byId[id] || (st.catalog.infra || []).find((x) => x.id === id) || { name: id, emoji: '🌐' };
+  const ranking = Object.entries(perGame).sort((a, b) => b[1] - a[1]);
   fill(
     $('nomina'),
     card('⏳', 'Pantallas de carga', fmtDur(loadTotal), `Identificándote con Cl@ve · ${fmtDur(loadMonth)} este mes`, loadJoke),
-    card('💥', 'Caídas de la sede', `${out.all}`, `${outMonth} este mes${worst ? ` · la que más: ${byId[worst[0]]?.name || worst[0]} (${worst[1]})` : ''}`, out.all ? (out.all >= 10 ? '«Servicio temporalmente no disponible» ya es tu canción favorita.' : 'Error 500: el código postal de la paciencia.') : 'Ninguna caída registrada. Sospechoso.'),
+    card('💥', 'Caídas de la sede', `${out.all}`, `${outMonth} este mes${worst ? ` · la que más: ${nameOf(worst[0])} (${worst[1]})` : ''}`, out.all ? (out.all >= 10 ? '«Servicio temporalmente no disponible» ya es tu canción favorita.' : 'Error 500: el código postal de la paciencia.') : 'Ninguna caída registrada. Sospechoso.'),
     card('🤹', 'Récord de pestañas', tabsAll ? `${tabsAll.count}` : '—', tabsAll ? `a la vez, el ${fmtDate(tabsAll.ts)}${bestGameTabs ? ` · de una sola sede: ${bestGameTabs[1].count} (${byId[bestGameTabs[0]]?.name || bestGameTabs[0]})` : ''}` : 'Abre varias pestañas de sedes y verás', tabsAll && tabsAll.count >= 8 ? 'Tu navegador te pide un aumento de sueldo.' : null),
+    ranking.length
+      ? el('div', { class: 'nm-rank' }, el('span', { class: 'eyebrow' }, 'Caídas por web'), ranking.map(([id, n]) => el('span', { class: 'chip' }, `${infoOf(id).emoji} ${infoOf(id).name}`, el('b', {}, n))))
+      : null,
   );
 }
 

@@ -1,5 +1,5 @@
 {
-  "catalogVersion": 3,
+  "catalogVersion": 4,
   "minAppVersion": "0.5.0",
   "updated": "2026-10-29",
   "games": [
@@ -766,9 +766,73 @@
         "type": "tabs",
         "count": 10
       }
+    },
+    {
+      "id": "caida-clave",
+      "emoji": "🫥",
+      "name": "Hoy no eres nadie",
+      "desc": "Cl@ve se cae justo cuando intentas identificarte.",
+      "rule": {
+        "type": "outages",
+        "agg": "sum",
+        "count": 1,
+        "game": "clave"
+      }
+    },
+    {
+      "id": "caida-clave5",
+      "emoji": "👻",
+      "name": "Identidad en paradero desconocido",
+      "desc": "5 caídas de Cl@ve.",
+      "rule": {
+        "type": "outages",
+        "agg": "sum",
+        "count": 5,
+        "game": "clave"
+      }
+    },
+    {
+      "id": "caida-sara",
+      "emoji": "🌐",
+      "name": "Red SARA en apuros",
+      "desc": "3 caídas de Red SARA (REC, VALIDe, Notific@…).",
+      "rule": {
+        "type": "outages",
+        "agg": "sum",
+        "count": 3,
+        "game": "redsara"
+      }
+    },
+    {
+      "id": "caida-fnmt",
+      "emoji": "📜",
+      "name": "Certificado en el limbo",
+      "desc": "La FNMT se cae mientras renuevas un certificado.",
+      "secret": true,
+      "rule": {
+        "type": "outages",
+        "agg": "sum",
+        "count": 1,
+        "game": "fnmt"
+      }
+    },
+    {
+      "id": "apagon",
+      "emoji": "🕳️",
+      "name": "Apagón administrativo",
+      "desc": "Caídas de 3 webs distintas (sedes, Cl@ve o Red SARA) en un mismo día.",
+      "rule": {
+        "type": "outageSites",
+        "count": 3
+      }
     }
   ],
   "news": [
+    {
+      "date": "2026-10-29",
+      "title": "Caídas de Cl@ve, Red SARA y FNMT",
+      "body": "Ahora también se apuntan las caídas de las webs de las que dependen las sedes: Cl@ve, Red SARA (REC, VALIDe, Notific@…) y la FNMT. Con 5 logros nuevos, como «Hoy no eres nadie»."
+    },
     {
       "date": "2026-10-29",
       "title": "Lo que no sale en la nómina",
@@ -1211,5 +1275,33 @@
       "clave.gob.es"
     ],
     "urlContains": []
-  }
+  },
+  "infra": [
+    {
+      "id": "clave",
+      "name": "Cl@ve",
+      "emoji": "🔑",
+      "domains": [
+        "clave.gob.es"
+      ]
+    },
+    {
+      "id": "redsara",
+      "name": "Red SARA",
+      "emoji": "🌐",
+      "domains": [
+        "redsara.es"
+      ]
+    },
+    {
+      "id": "fnmt",
+      "name": "FNMT (certificados)",
+      "emoji": "🪪",
+      "domains": [
+        "fnmt.gob.es",
+        "fnmt.es",
+        "cert.fnmt.es"
+      ]
+    }
+  ]
 }
