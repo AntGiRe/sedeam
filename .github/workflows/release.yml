@@ -1,0 +1,61 @@
+# Crea una release con el zip instalable cada vez que cambia la versión de manifest.json en main.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: [manifest.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Leer versión
+        id: v
+        run: echo "version=$(jq -r .version manifest.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Comprobar si ya existe
+        id: exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.v.outputs.version }}" >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pruebas
+        if: steps.exists.outputs.skip != 'true'
+        run: node dev/test.mjs
+
+      - name: Empaquetar
+        if: steps.exists.outputs.skip != 'true'
+        run: |
+          mkdir -p build/sedeam
+          cp -R manifest.json background.js config.js catalog.json theme-boot.js app.html app.js popup.html popup.js ui.css icons lib build/sedeam/
+          cd build && zip -qr "sedeam-${{ steps.v.outputs.version }}.zip" sedeam
+
+      - name: Publicar release
+        if: steps.exists.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          cat > notes.md <<NOTES
+          ## Instalar (primera vez)
+
+          1. Descarga **sedeam-$V.zip** (abajo, en *Assets*) y descomprímelo en una carpeta fija, por ejemplo \`Documentos/Sedeam\`.
+          2. Abre \`chrome://extensions\`, activa **Modo de desarrollador** y pulsa **Cargar descomprimida**. Elige la carpeta \`sedeam\` que sale del zip.
+
+          ## Actualizar
+
+          Descomprime el zip nuevo **encima de la misma carpeta**. Sedeam se recarga solo y conserva tus horas y logros.
+
+          ## Cambios
+          NOTES
+          gh release create "v$V" "build/sedeam-$V.zip" --title "Sedeam $V" --notes-file notes.md --generate-notes

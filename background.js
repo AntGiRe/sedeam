@@ -7,6 +7,8 @@
 
 import { MIN, commitSegment, uncommitSegment, dayKey, fmtBadge, fmtDur, levelFor, total, sumAll } from './lib/core.js';
 import { evaluate } from './lib/rules.js';
+import { daysUntil, seasonAt, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
+import { rewardContext, unlockedIds } from './lib/rewards.js';
 import { enabledGames, matchGame } from './lib/games.js';
 import { getCatalog, refreshRemoteCatalog } from './lib/catalog.js';
 import { checkForUpdates } from './lib/updates.js';
@@ -47,6 +49,9 @@ function tick(reason, idleState) {
     const idleMs = settings.idleMinutes * MIN;
     const { live, recent = [] } = await chrome.storage.session.get(['live', 'recent']);
     const levelBefore = levelFor(total(sumAll(data)), catalog.levels).level;
+    const rewardsBefore = unlockedIds(catalog, rewardContext(data, catalog));
+    const season = catalog.seasons ? seasonAt(catalog.seasons, new Date(now)) : null;
+    const tierBefore = season ? seasonProgress(data, catalog.seasons, season).tier : 0;
 
     // Tramos recientes: hacen falta para descontar el rato sin actividad cuando salta el aviso de inactividad.
     let segs = recent.filter((s) => s.end > now - idleMs - 2 * MIN);
@@ -83,6 +88,16 @@ function tick(reason, idleState) {
       const items = fresh.map((a) => ({ id: `logro-${a.id}`, kind: 'ach', emoji: a.emoji, label: '¡Logro desbloqueado!', name: a.name, desc: a.desc }));
       const lv = levelFor(total(sumAll(data)), catalog.levels);
       if (lv.level > levelBefore) items.push({ id: `nivel-${lv.level}`, kind: 'level', emoji: '⬆️', label: `¡Nivel ${lv.level}!`, name: lv.title, desc: 'Has subido de rango. Sigue así (o no).' });
+      if (season) {
+        const tier = seasonProgress(data, catalog.seasons, season).tier;
+        if (tier > tierBefore) items.push({ id: `temporada-${season.id}-${tier}`, kind: 'level', emoji: season.emoji, label: `Temporada ${season.label} · nivel ${tier}`, name: tier >= catalog.seasons.tiers ? '¡Pase completado!' : `Nivel ${tier} de ${catalog.seasons.tiers}`, desc: season.name });
+      }
+      const rewardsAfter = unlockedIds(catalog, rewardContext(data, catalog));
+      for (const r of catalog.rewards || []) {
+        if (rewardsAfter.has(r.id) && !rewardsBefore.has(r.id)) {
+          items.push({ id: `recompensa-${r.id}`, kind: 'reward', emoji: r.type === 'avatar' ? r.emoji : { theme: '🎨', frame: '🖼️', title: '🏷️' }[r.type], label: '¡Recompensa desbloqueada!', name: r.name, desc: 'Equípala en tu Perfil.' });
+        }
+      }
       if (fresh.length) {
         const { unseen = [] } = await chrome.storage.local.get('unseen');
         await chrome.storage.local.set({ unseen: [...new Set([...unseen, ...fresh.map((a) => a.id)])] });
@@ -149,8 +164,30 @@ function notify(id, title, message) {
   });
 }
 
+// Recordatorios de plazos: N días antes, la víspera y el mismo día, a partir de las 9:00.
+async function checkDeadlines() {
+  const [settings, catalog] = await Promise.all([loadSettings(), getCatalog()]);
+  const now = new Date();
+  if (!settings.deadlineAlerts || now.getHours() < 9) return;
+  const marks = new Set([settings.deadlineDays, 1, 0]);
+  const { deadlineSeen = [] } = await chrome.storage.local.get('deadlineSeen');
+  const seen = new Set(deadlineSeen);
+  const items = [];
+  for (const d of upcomingDeadlines(catalog.deadlines, now, { limit: 20, horizon: settings.deadlineDays + 1 })) {
+    const days = daysUntil(d.date, now);
+    const key = `${d.key}:${days}`;
+    if (!marks.has(days) || seen.has(key)) continue;
+    seen.add(key);
+    const when = days === 0 ? 'hoy' : days === 1 ? 'mañana' : `en ${days} días`;
+    items.push({ id: `plazo-${key}`, kind: 'info', emoji: '📅', label: `Plazo ${when}`, name: d.title, desc: [d.models, d.date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })].filter(Boolean).join(' · ') });
+  }
+  await chrome.storage.local.set({ deadlineSeen: [...seen].slice(-200) });
+  if (items.length) await announce(items, settings);
+}
+
 // Catálogo nuevo en GitHub y/o versión nueva del código en disco.
 async function runUpdates() {
+  checkDeadlines().catch((e) => console.warn(`[${BRAND.name}] plazos`, e));
   try {
     if (await refreshRemoteCatalog()) {
       const c = await getCatalog();
@@ -208,7 +245,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 chrome.notifications.onClicked.addListener((id) => {
-  const hash = id.startsWith('logro') ? '#logros' : id.startsWith('nivel') ? '#estadisticas' : '#biblioteca';
+  const hash = id.startsWith('logro') ? '#logros'
+    : id.startsWith('recompensa') ? '#perfil'
+      : id.startsWith('plazo') || id.startsWith('temporada') ? '#temporada'
+        : id.startsWith('nivel') ? '#estadisticas' : '#biblioteca';
   chrome.tabs.create({ url: chrome.runtime.getURL('app.html' + hash) });
   chrome.notifications.clear(id);
 });

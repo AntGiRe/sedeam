@@ -2,7 +2,17 @@
 
 *Tu biblioteca de trámites.* Extensión de Chrome que cuenta, como horas de juego, el tiempo **activo** que pasas en las webs de la Administración: Agencia Tributaria, Seguridad Social, DEHú, Catastro, Registros, DGT, BOE y SEPE. Tiene niveles, logros y estadísticas. Puedes añadir más webs desde Ajustes.
 
-## Instalar
+## Instalar sin saber nada de git
+
+1. Entra en [la última versión publicada](https://github.com/AntGiRe/sedeam/releases/latest) y descarga el archivo `sedeam-X.Y.Z.zip` (en *Assets*).
+2. Descomprímelo en una carpeta fija, por ejemplo `Documentos/Sedeam`.
+3. Abre `chrome://extensions`, activa **Modo de desarrollador** y pulsa **Cargar descomprimida**. Elige la carpeta `sedeam` que sale del zip.
+
+Cuando salga una versión nueva, Sedeam te avisará. Descarga el zip nuevo y descomprímelo **encima de la misma carpeta**: la extensión se recarga sola y conserva tus horas y logros.
+
+Las releases se crean solas: cada vez que cambia `version` en `manifest.json` y se sube a GitHub, una automatización empaqueta el zip y publica la release (`.github/workflows/release.yml`).
+
+## Instalar con git (para desarrollar)
 
 1. Clona el repositorio en una carpeta fija, por ejemplo `~/Documents/sedeam`:
    ```bash

@@ -17,6 +17,9 @@
   --axis: #34465c;
   --danger: #e66767;
   --gold: #e8b64c;
+  --hover: #2d4058;
+  --input-bg: #0a0f15;
+  --tile-bg: rgba(0, 0, 0, 0.22);
   --radius: 10px;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
@@ -45,6 +48,44 @@ a { color: inherit; }
 .muted { color: var(--muted); }
 .secondary { color: var(--text-2); }
 .num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Temas (se desbloquean subiendo de nivel) ---------- */
+/* La barra superior es oscura en todos los temas: así la marca siempre se lee. */
+
+:root[data-theme="papel"] {
+  color-scheme: light;
+  --page: #efe6d2; --chrome: #3a2c1a; --surface: #f8f1e1; --surface-2: #f1e7d1; --surface-3: #e4d6b8;
+  --border: rgba(60, 40, 10, 0.12); --border-strong: rgba(60, 40, 10, 0.22);
+  --text: #2a2116; --text-2: #5b4a33; --muted: #8a7656;
+  --accent: #b06d1e; --accent-strong: #7a450c; --grid: #e2d5b9; --axis: #c9b791;
+  --hover: #d9c9a6; --input-bg: #fffaf0; --tile-bg: rgba(255, 250, 240, 0.6);
+}
+:root[data-theme="boe"] {
+  color-scheme: light;
+  --page: #f4f4f2; --chrome: #111111; --surface: #ffffff; --surface-2: #f2f2f0; --surface-3: #e4e4e0;
+  --border: rgba(0, 0, 0, 0.1); --border-strong: rgba(0, 0, 0, 0.2);
+  --text: #111111; --text-2: #444444; --muted: #777777;
+  --accent: #333333; --accent-strong: #000000; --grid: #e6e6e3; --axis: #c8c8c3;
+  --hover: #dadad5; --input-bg: #ffffff; --tile-bg: #f7f7f5;
+}
+:root[data-theme="oro"] {
+  --page: #12100a; --chrome: #0a0905; --surface: #1c1810; --surface-2: #241f14; --surface-3: #322a1a;
+  --text: #f4ecd8; --text-2: #cdbf9c; --muted: #8f8466;
+  --accent: #e8b64c; --accent-strong: #b8862b; --on-accent: #1a1205; --grid: #2c2618; --axis: #3e3522;
+  --hover: #40361f; --input-bg: #0a0905;
+}
+:root[data-theme="cierre"] {
+  --page: #150b0e; --chrome: #0d0608; --surface: #21121a; --surface-2: #2a1820; --surface-3: #3a2029;
+  --text: #f3e6e8; --text-2: #c9aab0; --muted: #93737a;
+  --accent: #ff7a7a; --accent-strong: #d94a4a; --grid: #34202a; --axis: #4a2c36;
+  --hover: #4a2a35; --input-bg: #0d0608;
+}
+:root[data-theme="renta"] {
+  --page: #0c1510; --chrome: #070d09; --surface: #122019; --surface-2: #172a20; --surface-3: #20382b;
+  --text: #e6f2ea; --text-2: #a8c4b2; --muted: #6f8f7b;
+  --accent: #6cc644; --accent-strong: #3f9a2a; --on-accent: #08160b; --grid: #1e3326; --axis: #2b4636;
+  --hover: #2a4a37; --input-bg: #070d09;
+}
 
 /* ---------- Marca ---------- */
 
@@ -78,14 +119,14 @@ button, .btn {
   gap: 6px;
   transition: background 0.12s;
 }
-button:hover, .btn:hover { background: #2d4058; }
+button:hover, .btn:hover { background: var(--hover); }
 button:disabled { opacity: 0.4; cursor: default; }
 button.primary, .btn.primary {
-  background: linear-gradient(180deg, #47a0f0, #2a6fc0);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 85%, #fff 15%), var(--accent-strong));
   border-color: transparent;
-  color: #fff;
+  color: var(--on-accent, #fff);
 }
-button.primary:hover, .btn.primary:hover { background: linear-gradient(180deg, #5aaeff, #2f7bd4); }
+button.primary:hover, .btn.primary:hover { filter: brightness(1.1); background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 85%, #fff 15%), var(--accent-strong)); }
 .btn.play {
   background: linear-gradient(180deg, #8bd45b, #4e9a2a);
   border-color: transparent;
@@ -107,7 +148,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 input, select {
   font: inherit;
   color: var(--text);
-  background: var(--chrome);
+  background: var(--input-bg);
   border: 1px solid var(--axis);
   border-radius: 6px;
   padding: 7px 9px;
@@ -128,6 +169,11 @@ input, select {
   box-shadow: 0 0 0 2px var(--chrome), 0 0 0 3px var(--ring, var(--accent));
 }
 .avatar.playing { --ring: var(--playing); }
+/* Marcos de avatar (recompensas). Si estás jugando, el anillo verde manda. */
+.avatar.frame-bronce:not(.playing) { box-shadow: 0 0 0 2px var(--chrome), 0 0 0 4px #c47f45, 0 0 0 5px #6e3f1c; }
+.avatar.frame-plata:not(.playing) { box-shadow: 0 0 0 2px var(--chrome), 0 0 0 4px #d6dee6, 0 0 0 5px #7d8a96, 0 0 12px rgba(214, 222, 230, 0.35); }
+.avatar.frame-oro:not(.playing) { box-shadow: 0 0 0 2px var(--chrome), 0 0 0 4px #e8b64c, 0 0 0 5px #8a6417, 0 0 16px rgba(232, 182, 76, 0.5); }
+.avatar.frame-fuego:not(.playing) { box-shadow: 0 0 0 2px var(--chrome), 0 0 0 4px #ff7a2f, 0 0 10px 2px rgba(255, 106, 0, 0.6), 0 0 22px 4px rgba(255, 60, 0, 0.3); }
 .lvl {
   position: absolute;
   right: -9px;
@@ -145,7 +191,7 @@ input, select {
   font-variant-numeric: tabular-nums;
 }
 .xp { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
-.xp > i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #2a78d6, #5aa9e6); }
+.xp > i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent-strong), var(--accent)); }
 .xp.gold > i { background: linear-gradient(90deg, #b8862b, var(--gold)); }
 .xp-label { margin-top: 4px; font-size: 11px; color: var(--muted); }
 .status-playing { color: var(--playing); }
@@ -160,6 +206,7 @@ input, select {
   border-radius: 6px;
   overflow: hidden;
   isolation: isolate;
+  color: #fff;
   background:
     radial-gradient(120% 70% at 20% 0%, color-mix(in srgb, var(--game) 75%, #fff 12%) 0%, transparent 60%),
     linear-gradient(165deg, color-mix(in srgb, var(--game) 80%, #000 10%) 0%, color-mix(in srgb, var(--game) 28%, #070b10) 75%);
@@ -245,6 +292,7 @@ input, select {
   font-size: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   max-width: 260px;
+  color: #e8eef4;
 }
 .tooltip[hidden] { display: none; }
 .tooltip .row { display: flex; align-items: center; gap: 6px; }

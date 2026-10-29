@@ -2,11 +2,13 @@ import {
   HOUR, MIN, addDays, bestDay, dayKey, fmtAgo, fmtDur, fmtHours, levelFor, parseKey, streaks, sumAll, sumRange, total,
 } from './lib/core.js';
 import { progress } from './lib/rules.js';
+import { daysUntil, seasonAt, seasonHistory, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
+import { isUnlocked, titleOptions, unlockHint } from './lib/rewards.js';
 import { allGames, normalizeDomain } from './lib/games.js';
 import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
-import { capsule, el, fill, fmtProgress, levelColor, loadAll, updateAvailable, withLive } from './lib/view.js';
+import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, loadAll, paintAvatar, profileFor, updateAvailable, withLive } from './lib/view.js';
 import { showToasts } from './lib/toast.js';
-import { BRAND, REMOTE_ENABLED, REPO, repoUrl } from './config.js';
+import { BRAND, REMOTE_ENABLED, REPO, releasesUrl } from './config.js';
 
 const $ = (id) => document.getElementById(id);
 const SVG = 'http://www.w3.org/2000/svg';
@@ -28,6 +30,7 @@ let range = 'week';
 let offset = 0;
 let achFilter = 'all';
 let search = '';
+let me = null; // { profile, ctx, lv }
 let fresh = new Set(); // logros recién desbloqueados que aún no habías visto
 
 // ---------- Tooltip ----------
@@ -144,14 +147,12 @@ function lastDaysItems(n, gameFilter = null) {
 // ---------- Cabecera común ----------
 
 function renderChrome() {
-  const grand = total(sumAll(data));
-  const lv = levelFor(grand, st.catalog.levels);
   const live = st.live && byId[st.live.game];
-  $('chip-title').textContent = lv.title;
-  fill($('chip-status'), live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) : el('span', { class: 'status-online' }, `Nivel ${lv.level} · ${fmtHours(grand)}`));
-  $('chip-lvl').textContent = lv.level;
-  $('chip-avatar').style.setProperty('--lvl', levelColor(lv.level));
-  $('chip-avatar').classList.toggle('playing', !!live);
+  const { profile, lv } = me;
+  applyTheme(profile.theme);
+  $('chip-title').textContent = profile.name;
+  fill($('chip-status'), live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) : el('span', { class: 'rank' }, `${profile.titleText} · Nv. ${lv.level}`));
+  paintAvatar($('chip-avatar'), profile, lv.level, !!live);
 
   const upd = updateAvailable(st.updateStatus);
   $('update-banner').hidden = !upd;
@@ -220,7 +221,32 @@ function renderLibraryHome() {
   const list = games.filter((g) => g.name.toLowerCase().includes(search.toLowerCase()));
   const all = sumAll(data);
 
+  const sb = seasonBlock();
+  const next = upcomingDeadlines(st.catalog.deadlines, new Date(), { limit: 1 })[0];
+  const promo = el(
+    'div',
+    { class: 'promo' },
+    sb
+      ? el(
+          'a',
+          { class: 'promo-card season', href: '#temporada', style: `--season:${sb.season.color}` },
+          el('span', { class: 'pe', 'aria-hidden': 'true' }, sb.season.emoji),
+          el('div', {}, el('div', { class: 'eyebrow' }, `Temporada ${sb.season.label} · termina ${fmtCountdown(sb.left)}`), el('b', {}, sb.season.name), el('div', { class: 'xp' }, el('i', { style: `width:${Math.round(sb.sp.progress * 100)}%` }))),
+          el('div', { class: 'pt' }, el('span', {}, 'NIVEL'), el('b', {}, sb.sp.tier)),
+        )
+      : null,
+    next
+      ? el(
+          'a',
+          { class: `promo-card dl-card${daysUntil(next.date, new Date()) <= 3 ? ' soon' : ''}`, href: '#temporada' },
+          el('span', { class: 'pe', 'aria-hidden': 'true' }, '📅'),
+          el('div', {}, el('div', { class: 'eyebrow' }, `Próximo plazo · ${fmtCountdown(daysUntil(next.date, new Date()))}`), el('b', {}, next.title), el('div', { class: 'muted', style: 'font-size:12px' }, `${next.date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}${next.models ? ` · ${next.models}` : ''}`)),
+        )
+      : null,
+  );
+
   fill($('lib-main'), 
+    promo,
     recent.length
       ? el('div', {}, el('div', { class: 'h-row' }, el('h2', {}, 'Jugados recientemente')), el('div', { class: 'shelf recent' }, recent.map((g) => shelfItem(g, { recent: true }))))
       : el('div', { class: 'card', style: 'margin-bottom:32px' }, el('h2', { style: 'font-size:16px;margin-bottom:4px' }, `Bienvenido a ${BRAND.name}`), el('p', { class: 'secondary', style: 'margin:0' }, 'Abre cualquier sede (Agencia Tributaria, Seguridad Social…) y el contador empezará solo. Tus horas aparecerán aquí.')),
@@ -379,11 +405,9 @@ function buckets() {
 function renderProfile() {
   const grand = total(sumAll(data));
   const lv = levelFor(grand, st.catalog.levels);
-  $('p-lvl').textContent = lv.level;
-  $('p-avatar').style.setProperty('--lvl', levelColor(lv.level));
-  $('p-avatar').classList.toggle('playing', !!st.live);
-  $('p-level').textContent = `Nivel ${lv.level}`;
-  $('p-title').textContent = lv.title;
+  paintAvatar($('p-avatar'), me.profile, lv.level, !!st.live);
+  $('p-level').textContent = `Nivel ${lv.level} · ${me.profile.titleText}`;
+  $('p-title').textContent = me.profile.name;
   $('p-xp').style.width = `${Math.round(lv.progress * 100)}%`;
   $('p-xp-label').textContent = lv.nextTitle ? `${fmtHours(grand)} · faltan ${fmtHours(lv.hoursToNext * HOUR)} para ${lv.nextTitle}` : `${fmtHours(grand)} · rango máximo`;
 
@@ -569,6 +593,243 @@ function renderAchievements() {
   if (st.unseen.length) chrome.storage.local.set({ unseen: [] });
 }
 
+// ---------- Temporada ----------
+
+const REWARD_ICON = { theme: '🎨', frame: '🖼️', title: '🏷️' };
+const rewardIcon = (r) => (r.type === 'avatar' ? r.emoji : REWARD_ICON[r.type] || '🎁');
+const rewardKind = { theme: 'Tema', avatar: 'Avatar', frame: 'Marco', title: 'Título' };
+
+function seasonBlock() {
+  const cfg = st.catalog.seasons;
+  if (!cfg) return null;
+  const now = new Date();
+  const season = seasonAt(cfg, now);
+  return { cfg, season, sp: seasonProgress(data, cfg, season), left: daysUntil(season.end, now) };
+}
+
+function renderSeason() {
+  const b = seasonBlock();
+  if (!b) {
+    fill($('season-hero'), el('div', {}, 'Este catálogo no trae temporadas.'));
+    return;
+  }
+  const { cfg, season, sp, left } = b;
+  const fmtD = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  $('season-hero').style.setProperty('--season', season.color);
+  fill(
+    $('season-hero'),
+    el('div', { class: 'big-emoji', 'aria-hidden': 'true' }, season.emoji),
+    el(
+      'div',
+      {},
+      el('div', { class: 'eyebrow', style: 'color:rgba(255,255,255,.7)' }, `Temporada ${season.label}`),
+      el('h1', {}, season.name),
+      el('div', { class: 'meta' }, `${fmtD(season.start)} – ${fmtD(season.end)} · termina ${fmtCountdown(left)} · ${fmtHours(sp.ms)} jugadas`),
+      el('div', { class: 'xp' }, el('i', { style: `width:${Math.round(sp.progress * 100)}%` })),
+      el('div', { class: 'meta', style: 'margin-top:6px;font-size:12px' }, sp.maxed ? '¡Pase completado! Eres leyenda de esta temporada.' : `${fmtDur(sp.msToNext)} para el nivel ${sp.tier + 1} · ${cfg.hoursPerTier} h por nivel`),
+    ),
+    el('div', { class: 'tier-ring', style: `--p:${(sp.tier / cfg.tiers) * 100}` }, el('div', {}, el('span', {}, 'NIVEL'), el('b', {}, String(sp.tier)), el('span', {}, `DE ${cfg.tiers}`))),
+  );
+
+  // Pista del pase: un hueco por nivel, con su recompensa si la tiene.
+  const byTier = {};
+  for (const r of st.catalog.rewards || []) if (r.unlock?.seasonTier) (byTier[r.unlock.seasonTier] ||= []).push(r);
+  const best = me.ctx.bestTier;
+  $('pass-sub').textContent = `Mejor nivel en cualquier temporada: ${best}. Las recompensas, una vez ganadas, son tuyas para siempre.`;
+  const cells = [];
+  for (let n = 1; n <= cfg.tiers; n++) {
+    const rs = byTier[n] || [];
+    const done = sp.tier >= n;
+    const medal = n === 5 ? '🥉' : n === 15 ? '🥈' : n === cfg.tiers ? '🥇' : null;
+    cells.push(
+      el(
+        'div',
+        { class: `tier${rs.length || medal ? ' reward' : ''}${done ? ' done' : ''}${sp.tier + 1 === n ? ' current' : ''}`, title: rs.map((r) => `${rewardKind[r.type]}: ${r.name}`).join('\n') || undefined },
+        el('div', { class: 'n' }, n),
+        el('div', { class: 'r', 'aria-hidden': 'true' }, rs.length ? rewardIcon(rs[0]) : medal || '·'),
+        el('div', { class: 'lbl' }, rs.length ? rs.map((r) => r.name).join(' + ') : medal ? 'Insignia de temporada' : ''),
+      ),
+    );
+  }
+  fill($('pass'), cells);
+  const cur = $('pass').children[Math.min(cfg.tiers - 1, sp.tier)];
+  if (cur) $('pass').scrollLeft = Math.max(0, cur.offsetLeft - $('pass').clientWidth / 2);
+
+  const now = new Date();
+  fill(
+    $('deadlines'),
+    // Cada plazo recurrente una sola vez (su próxima fecha), para que las cotizaciones mensuales no lo llenen todo.
+    upcomingDeadlines(st.catalog.deadlines, now, { limit: 40, horizon: 400 }).filter((d, i, arr) => arr.findIndex((x) => x.id === d.id) === i).slice(0, 8).map((d) => {
+      const days = daysUntil(d.date, now);
+      return el(
+        'div',
+        { class: `dl${days <= 3 ? ' soon' : ''}${d.major ? ' major' : ''}` },
+        el('div', { class: 'date' }, el('b', {}, d.date.getDate()), el('span', {}, MONTHS[d.date.getMonth()])),
+        el('div', {}, el('div', { class: 't' }, `${byId[d.game]?.emoji || '📅'} ${d.title}`), d.models ? el('div', { class: 'm' }, d.models) : null),
+        el('div', { class: 'cd' }, fmtCountdown(days)),
+      );
+    }),
+  );
+
+  const hist = seasonHistory(data, cfg, now).seasons.reverse();
+  fill(
+    $('season-list'),
+    hist.length
+      ? hist.map((x) =>
+          el(
+            'div',
+            { class: 'srow' },
+            el('div', { class: 'e', 'aria-hidden': 'true' }, x.emoji),
+            el('div', {}, el('b', {}, `${x.label} · ${x.name}`), el('div', { class: 'sub' }, `${fmtHours(x.ms)}${x.id === season.id ? ' · en curso' : ''}`)),
+            el('div', { class: 'tierv' }, `Nv. ${x.tier}`),
+            el('div', { class: 'medal' }, x.tier >= cfg.tiers ? '🥇' : x.tier >= 15 ? '🥈' : x.tier >= 5 ? '🥉' : ''),
+          ),
+        )
+      : el('div', { class: 'empty' }, 'Tu primera temporada empieza en cuanto entres en una sede.'),
+  );
+}
+
+// ---------- Perfil ----------
+
+async function updateProfile(patch) {
+  await updateSettings({ profile: { ...(st.settings.profile || {}), ...patch } });
+}
+
+function renderProfilePage() {
+  const { profile, ctx, lv } = me;
+  const all = sumAll(data);
+  const cfg = st.catalog.seasons;
+  const hist = cfg ? seasonHistory(data, cfg).seasons.filter((x) => x.tier >= 5).reverse() : [];
+  const avatar = el('div', { class: 'avatar', 'aria-hidden': 'true' }, profile.avatar, el('span', { class: 'lvl' }, lv.level));
+  paintAvatar(avatar, profile, lv.level, !!st.live);
+  fill(
+    $('profile-hero'),
+    avatar,
+    el(
+      'div',
+      {},
+      el('div', { class: 'pname' }, profile.name),
+      el('div', { class: 'ptitle' }, profile.titleText),
+      el(
+        'div',
+        { class: 'facts' },
+        el('div', {}, el('span', { class: 'eyebrow' }, 'Nivel'), el('b', {}, `${lv.level} · ${lv.title}`)),
+        el('div', {}, el('span', { class: 'eyebrow' }, 'Horas'), el('b', {}, fmtHours(total(all)))),
+        el('div', {}, el('span', { class: 'eyebrow' }, 'Logros'), el('b', {}, `${unlockedCount()}/${st.catalog.achievements.length}`)),
+        el('div', {}, el('span', { class: 'eyebrow' }, 'Mejor temporada'), el('b', {}, `Nv. ${ctx.bestTier}`)),
+      ),
+    ),
+    hist.length
+      ? el('div', { class: 'badges' }, hist.slice(0, 8).map((x) => el('div', { class: 'sbadge', style: `--season:${x.color}`, title: `${x.label} · ${x.name} · nivel ${x.tier}` }, el('div', {}, x.tier >= cfg.tiers ? '🥇' : x.tier >= 15 ? '🥈' : '🥉'), x.label)))
+      : null,
+  );
+
+  // Vitrina: 3 huecos, cada uno con su selector.
+  const got = st.catalog.achievements.filter((a) => data.achievements[a.id]);
+  const chosen = [...profile.showcase];
+  fill(
+    $('showcase'),
+    [0, 1, 2].map((i) => {
+      const a = st.catalog.achievements.find((x) => x.id === chosen[i]);
+      const sel = el(
+        'select',
+        {
+          'aria-label': `Hueco ${i + 1} de la vitrina`,
+          onchange: (e) => {
+            const next = [...chosen];
+            next[i] = e.target.value || null;
+            updateProfile({ showcase: next.filter(Boolean).filter((v, k, arr) => arr.indexOf(v) === k) });
+          },
+        },
+        el('option', { value: '' }, got.length ? '— Elige un logro —' : 'Aún no tienes logros'),
+        got.map((x) => el('option', { value: x.id, selected: x.id === chosen[i] }, `${x.emoji} ${x.name}`)),
+      );
+      return el(
+        'div',
+        { class: `slot${a ? '' : ' empty'}` },
+        el('div', { class: 'ico', 'aria-hidden': 'true' }, a ? a.emoji : '🏆'),
+        el('div', { class: 'nm' }, a ? a.name : 'Hueco libre'),
+        a ? el('div', { class: 'muted', style: 'font-size:12px' }, a.desc) : null,
+        sel,
+      );
+    }),
+  );
+
+  // Personalizar
+  if (document.activeElement !== $('p-name')) $('p-name').value = (st.settings.profile || {}).name || '';
+  const titles = titleOptions(st.catalog, ctx);
+  const groups = [...new Set(titles.map((t) => t.group))];
+  fill(
+    $('pick-title'),
+    el('option', { value: '' }, `Automático (${lv.title})`),
+    groups.map((g) => el('optgroup', { label: g }, titles.filter((t) => t.group === g).map((t) => el('option', { value: t.id, selected: t.id === profile.title }, t.label)))),
+  );
+
+  const rewards = st.catalog.rewards || [];
+  const picked = st.settings.profile || {};
+  const pickBtn = (r, content, cls, current) => {
+    const open = isUnlocked(r, ctx);
+    return el(
+      'button',
+      {
+        type: 'button',
+        class: `${cls}${open ? '' : ' locked'}`,
+        'aria-pressed': String(current),
+        title: open ? `${r.name}${r.desc ? ` — ${r.desc}` : ''}` : `${r.name} · Se desbloquea con: ${unlockHint(r, st.catalog)}`,
+        onclick: () => open && updateProfile({ [r.type]: r.id }),
+      },
+      content,
+    );
+  };
+  const currentAvatar = rewards.find((r) => r.type === 'avatar' && r.emoji === profile.avatar)?.id;
+  fill($('pick-avatar'), rewards.filter((r) => r.type === 'avatar').map((r) => pickBtn(r, r.emoji, 'pick', r.id === currentAvatar)));
+
+  const THEME_SW = {
+    sede: ['#0e141c', '#151e29', '#5aa9e6', '#0a0f15'],
+    papel: ['#efe6d2', '#f8f1e1', '#b06d1e', '#3a2c1a'],
+    boe: ['#f4f4f2', '#ffffff', '#333333', '#111111'],
+    oro: ['#12100a', '#1c1810', '#e8b64c', '#0a0905'],
+    cierre: ['#150b0e', '#21121a', '#ff7a7a', '#0d0608'],
+    renta: ['#0c1510', '#122019', '#6cc644', '#070d09'],
+  };
+  fill(
+    $('pick-theme'),
+    rewards
+      .filter((r) => r.type === 'theme')
+      .map((r) => {
+        const key = r.id.replace(/^theme-/, '');
+        const sw = THEME_SW[key] || THEME_SW.sede;
+        const open = isUnlocked(r, ctx);
+        return pickBtn(
+          r,
+          [el('div', { class: 'sw' }, sw.map((c) => el('span', { style: `background:${c}` }))), el('div', { class: 'tx' }, el('b', {}, `${open ? '' : '🔒 '}${r.name}`), el('span', {}, open ? r.desc : unlockHint(r, st.catalog)))],
+          'theme-card',
+          key === profile.theme,
+        );
+      }),
+  );
+
+  const none = { id: '', type: 'frame', name: 'Sin marco', unlock: { default: true } };
+  fill(
+    $('pick-frame'),
+    [none, ...rewards.filter((r) => r.type === 'frame')].map((r) => {
+      const key = r.id.replace(/^frame-/, '');
+      const b = pickBtn(r, `${isUnlocked(r, ctx) ? '' : '🔒 '}${r.name}`, 'pick frame', (profile.frame || '') === key);
+      if (!r.id) b.onclick = () => updateProfile({ frame: null });
+      return b;
+    }),
+  );
+}
+
+function wireProfile() {
+  let t;
+  $('p-name').addEventListener('input', (e) => {
+    clearTimeout(t);
+    t = setTimeout(() => updateProfile({ name: e.target.value.trim() }), 400);
+  });
+  $('pick-title').addEventListener('change', (e) => updateProfile({ title: e.target.value || null }));
+}
+
 // ---------- Ajustes ----------
 
 async function updateSettings(patch) {
@@ -587,7 +848,7 @@ function renderSettings() {
   );
   fill($('upd-help'), 
     REMOTE_ENABLED
-      ? el('span', {}, 'El catálogo (juegos y logros) se descarga solo cada hora. El código se actualiza solo si tienes activado el script de actualización automática; si no, ', el('a', { href: repoUrl(), target: '_blank', rel: 'noopener' }, 'descarga la última versión'), ' en la misma carpeta y la extensión se recargará sola. Tus horas y logros no se pierden.')
+      ? el('span', {}, 'Los juegos, logros y plazos nuevos se descargan solos cada hora. Para el código nuevo: si instalaste con git, haz «git pull»; si instalaste desde un zip, ', el('a', { href: releasesUrl(), target: '_blank', rel: 'noopener' }, 'descarga la última versión'), ' y descomprímela encima de la misma carpeta. En ambos casos Sedeam se recarga solo y tus horas y logros no se pierden.')
       : `Para recibir actualizaciones, pon tu usuario de GitHub en config.js (ahora: ${REPO.owner}). Mientras tanto se usa el catálogo que trae la extensión.`,
   );
 
@@ -597,6 +858,9 @@ function renderSettings() {
   $('sound').checked = !!st.settings.sound;
   $('sysnotif').checked = !!st.settings.systemNotifications;
   for (const id of ['toast-page', 'sound', 'sysnotif']) $(id).disabled = !st.settings.notifications;
+  $('dl-alerts').checked = !!st.settings.deadlineAlerts;
+  $('dl-days').value = String(st.settings.deadlineDays);
+  $('dl-days').disabled = !st.settings.deadlineAlerts;
   const disabled = new Set(st.settings.disabled);
   fill($('glist'), 
     ...allGames(st.catalog, st.settings).map((g) => {
@@ -652,6 +916,8 @@ function wireSettings() {
   $('toast-page').addEventListener('change', (e) => updateSettings({ toastInPage: e.target.checked }));
   $('sound').addEventListener('change', (e) => updateSettings({ sound: e.target.checked }));
   $('sysnotif').addEventListener('change', (e) => updateSettings({ systemNotifications: e.target.checked }));
+  $('dl-alerts').addEventListener('change', (e) => updateSettings({ deadlineAlerts: e.target.checked }));
+  $('dl-days').addEventListener('change', (e) => updateSettings({ deadlineDays: Number(e.target.value) }));
   $('test-toast').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}));
   $('test-system').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast', system: true }).catch(() => {}));
   $('add').addEventListener('submit', (e) => {
@@ -713,7 +979,7 @@ function wireSettings() {
 
 function route() {
   const [tab, sub] = (location.hash || '#biblioteca').slice(1).split('/');
-  const valid = ['biblioteca', 'estadisticas', 'logros', 'ajustes'].includes(tab) ? tab : 'biblioteca';
+  const valid = ['biblioteca', 'temporada', 'estadisticas', 'logros', 'perfil', 'ajustes'].includes(tab) ? tab : 'biblioteca';
   return { tab: valid, sub: sub ? decodeURIComponent(sub) : null };
 }
 
@@ -725,6 +991,7 @@ function render() {
   // Se muestran los juegos activos y los que tienen horas aunque estén desactivados.
   games = all.filter((g) => g.enabled || totals[g.id]);
   byId = Object.fromEntries(all.map((g) => [g.id, g]));
+  me = profileFor(st, data);
 
   const { tab, sub } = route();
   for (const s of document.querySelectorAll('section.view')) s.hidden = s.id !== tab;
@@ -741,7 +1008,9 @@ function render() {
     renderHeat();
     renderHours();
     renderRecords();
-  } else if (tab === 'logros') renderAchievements();
+  } else if (tab === 'temporada') renderSeason();
+  else if (tab === 'perfil') renderProfilePage();
+  else if (tab === 'logros') renderAchievements();
   else renderSettings();
 }
 
@@ -782,5 +1051,6 @@ chrome.storage.onChanged.addListener((changes) => {
   if (changes.data || changes.settings || changes.remoteCatalog || changes.updateStatus || changes.live) refresh();
 });
 wireSettings();
+wireProfile();
 setInterval(refresh, 30_000);
 refresh();

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sedeam</title>
   <link rel="icon" href="icons/icon32.png">
+  <script src="theme-boot.js"></script>
   <link rel="stylesheet" href="ui.css">
   <style>
     /* ---------- Barra superior ---------- */
@@ -12,13 +13,14 @@
     .top-inner { max-width: 1280px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; gap: 28px; height: 58px; }
     nav { display: flex; gap: 2px; height: 100%; }
     nav a {
-      color: var(--text-2); text-decoration: none; text-transform: uppercase; letter-spacing: .12em;
+      color: rgba(255, 255, 255, .62); text-decoration: none; text-transform: uppercase; letter-spacing: .12em;
       font-size: 13px; font-weight: 700; display: flex; align-items: center; padding: 0 14px;
       border-bottom: 2px solid transparent;
     }
-    nav a:hover { color: var(--text); }
+    nav a:hover { color: #fff; }
     nav a[aria-current="page"] { color: #fff; border-bottom-color: var(--accent); }
-    .me-chip { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .me-chip { margin-left: auto; display: flex; align-items: center; gap: 12px; text-decoration: none; color: #e8eef4; }
+    .me-chip .who span.rank { color: color-mix(in srgb, var(--accent) 70%, #fff); }
     .me-chip .avatar { width: 34px; height: 34px; font-size: 18px; border-radius: 6px; }
     .me-chip .lvl { min-width: 20px; height: 20px; font-size: 10px; right: -7px; bottom: -7px; }
     .me-chip .who { text-align: right; line-height: 1.25; }
@@ -44,7 +46,7 @@
     .side .group { padding: 10px 8px 4px; }
     .side a { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: var(--text-2); }
     .side a:hover { background: var(--surface-2); color: var(--text); }
-    .side a[aria-current="page"] { background: var(--surface-3); color: #fff; }
+    .side a[aria-current="page"] { background: var(--surface-3); color: var(--text); }
     .side a .tile { width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; font-size: 13px; flex: none; background: color-mix(in srgb, var(--game) 45%, #0a0f15); }
     .side a .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .side a.playing .nm { color: var(--playing); }
@@ -64,6 +66,21 @@
     .item.unplayed .capsule { filter: saturate(.35) brightness(.7); }
     .item .live { color: var(--playing); display: flex; align-items: center; gap: 6px; }
 
+    .promo { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; margin-bottom: 28px; }
+    .promo-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--radius); text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--border); min-width: 0; }
+    .promo-card:hover { border-color: var(--border-strong); }
+    .promo-card > div:nth-child(2) { flex: 1; min-width: 0; }
+    .promo-card b { display: block; font-size: 16px; margin: 2px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .promo-card .pe { font-size: 34px; }
+    .promo-card.season { color: #fff; background: linear-gradient(110deg, #070b10 10%, color-mix(in srgb, var(--season) 55%, #070b10)); border: 0; }
+    .promo-card.season .eyebrow { color: rgba(255,255,255,.7); }
+    .promo-card.season .xp { background: rgba(255,255,255,.15); }
+    .promo-card.season .xp > i { background: linear-gradient(90deg, color-mix(in srgb, var(--season) 70%, #fff 10%), #fff); }
+    .promo-card .pt { text-align: center; line-height: 1; }
+    .promo-card .pt span { font-size: 9px; letter-spacing: .14em; opacity: .7; }
+    .promo-card .pt b { font-size: 30px; font-weight: 900; margin: 0; }
+    .promo-card.soon { border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
+    .promo-card.soon .eyebrow { color: var(--danger); }
     .news { display: grid; gap: 10px; margin-bottom: 32px; }
     .news article { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: grid; grid-template-columns: 90px 1fr; gap: 14px; }
     .news time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -72,7 +89,7 @@
 
     /* Ficha de juego */
     .hero {
-      position: relative; border-radius: var(--radius); overflow: hidden; height: 280px; isolation: isolate;
+      position: relative; border-radius: var(--radius); overflow: hidden; height: 280px; isolation: isolate; color: #fff;
       background:
         radial-gradient(90% 120% at 85% 10%, color-mix(in srgb, var(--game) 70%, #fff 10%) 0%, transparent 55%),
         linear-gradient(120deg, #070b10 15%, color-mix(in srgb, var(--game) 55%, #070b10) 100%);
@@ -81,7 +98,7 @@
     .hero .bg-art { position: absolute; right: 4%; top: 50%; transform: translateY(-50%) rotate(-10deg); font-size: 200px; line-height: 1; filter: drop-shadow(0 20px 40px rgba(0,0,0,.5)); z-index: -1; }
     .hero .txt { position: absolute; left: 32px; bottom: 28px; right: 40%; }
     .hero h1 { font-size: 46px; font-weight: 900; text-transform: uppercase; line-height: .95; letter-spacing: -.01em; text-shadow: 0 4px 24px rgba(0,0,0,.6); }
-    .hero .tag { margin-top: 10px; color: var(--text-2); font-size: 14px; max-width: 520px; }
+    .hero .tag { margin-top: 10px; color: rgba(255, 255, 255, .75); font-size: 14px; max-width: 520px; }
     .actionbar { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin: 14px 0 16px; }
     .stat .eyebrow { font-size: 10px; }
     .stat b { display: block; font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; }
@@ -93,17 +110,17 @@
 
     /* ---------- Estadísticas ---------- */
     .profile { display: grid; grid-template-columns: minmax(280px, 1.2fr) 3fr; gap: 24px; align-items: center;
-      background: linear-gradient(120deg, #1a2a40, var(--surface) 60%); }
+      background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 16%, var(--surface)), var(--surface) 60%); }
     .profile .avatar { width: 76px; height: 76px; font-size: 38px; border-radius: 10px; }
     .profile .who { display: flex; gap: 18px; align-items: center; }
     .profile .name { font-size: 22px; font-weight: 800; }
     .profile .xp { margin-top: 8px; }
     .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-    .tile { background: rgba(0,0,0,.22); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .tile { background: var(--tile-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
     .tile .v { font-size: 22px; font-weight: 700; margin-top: 4px; white-space: nowrap; }
     .tile .s { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    .seg { display: inline-flex; background: var(--chrome); border: 1px solid var(--axis); border-radius: 8px; padding: 2px; }
+    .seg { display: inline-flex; background: var(--input-bg); border: 1px solid var(--axis); border-radius: 8px; padding: 2px; }
     .seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; color: var(--text-2); }
     .seg button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }
     .period { display: flex; align-items: center; gap: 6px; }
@@ -161,6 +178,94 @@
     .ach-compact .ach .ico { width: 40px; height: 40px; font-size: 22px; }
     .ach-compact .ach .name { font-size: 13px; }
 
+    /* ---------- Temporada ---------- */
+    .season-hero {
+      position: relative; overflow: hidden; isolation: isolate; border-radius: var(--radius); padding: 28px 32px; margin-bottom: 16px; color: #fff;
+      background:
+        radial-gradient(80% 140% at 90% 0%, color-mix(in srgb, var(--season) 75%, #fff 8%) 0%, transparent 60%),
+        linear-gradient(120deg, #070b10 20%, color-mix(in srgb, var(--season) 50%, #070b10));
+      display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center;
+    }
+    .season-hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(135deg, rgba(255,255,255,.03) 0 2px, transparent 2px 11px); }
+    .season-hero .big-emoji { position: absolute; right: 200px; top: 50%; transform: translateY(-50%) rotate(-10deg); font-size: 150px; opacity: .9; z-index: -1; filter: drop-shadow(0 16px 30px rgba(0,0,0,.5)); }
+    .season-hero h1 { font-size: 38px; font-weight: 900; text-transform: uppercase; line-height: 1; margin: 6px 0 8px; text-shadow: 0 4px 20px rgba(0,0,0,.5); }
+    .season-hero .meta { color: rgba(255,255,255,.75); }
+    .season-hero .xp { max-width: 420px; margin-top: 14px; height: 8px; background: rgba(255,255,255,.15); }
+    .season-hero .xp > i { background: linear-gradient(90deg, color-mix(in srgb, var(--season) 70%, #fff 10%), #fff); }
+    .tier-ring { width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; text-align: center;
+      background: conic-gradient(#fff calc(var(--p) * 1%), rgba(255,255,255,.15) 0); }
+    .tier-ring > div { width: 104px; height: 104px; border-radius: 50%; background: #0a0f15; display: grid; place-content: center; }
+    .tier-ring b { font-size: 40px; font-weight: 900; line-height: 1; }
+    .tier-ring span { font-size: 10px; letter-spacing: .14em; color: rgba(255,255,255,.6); }
+
+    .pass { display: grid; grid-auto-flow: column; grid-auto-columns: 84px; gap: 6px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x proximity; }
+    .tier { scroll-snap-align: center; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); padding: 8px 6px 10px; text-align: center; position: relative; }
+    .tier .n { font-size: 11px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .tier .r { height: 44px; display: grid; place-items: center; font-size: 26px; margin: 4px 0; filter: grayscale(1); opacity: .35; }
+    .tier .lbl { font-size: 10.5px; line-height: 1.2; color: var(--muted); min-height: 26px; }
+    .tier.reward .r { filter: grayscale(.6); opacity: .6; }
+    .tier.done { background: color-mix(in srgb, var(--accent) 12%, var(--surface-2)); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+    .tier.done .r { filter: none; opacity: 1; }
+    .tier.done .n { color: var(--accent); }
+    .tier.done .lbl { color: var(--text-2); }
+    .tier.current { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .tier.current::after { content: 'AHORA'; position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); font-size: 9px; font-weight: 800; letter-spacing: .1em; background: var(--accent); color: var(--on-accent, #fff); padding: 1px 6px; border-radius: 4px; }
+
+    .deadlines { display: grid; gap: 6px; }
+    .dl { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); }
+    .dl .date { text-align: center; border-radius: 6px; background: var(--surface-3); padding: 4px 0; line-height: 1.1; }
+    .dl .date b { display: block; font-size: 18px; }
+    .dl .date span { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .dl .t { font-weight: 600; }
+    .dl .m { font-size: 11.5px; color: var(--muted); }
+    .dl .cd { font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--text-2); }
+    .dl.soon .cd { color: var(--danger); }
+    .dl.major .date { background: color-mix(in srgb, var(--accent) 25%, var(--surface-3)); }
+    .season-list { display: grid; gap: 6px; }
+    .srow { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); }
+    .srow .e { font-size: 22px; text-align: center; }
+    .srow .sub { font-size: 11.5px; color: var(--muted); }
+    .srow .medal { font-size: 20px; width: 24px; text-align: center; }
+    .srow .tierv { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    /* ---------- Perfil ---------- */
+    .profile-hero { display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+      background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 22%, var(--surface)), var(--surface) 65%); }
+    .profile-hero .avatar { width: 112px; height: 112px; font-size: 60px; border-radius: 14px; }
+    .profile-hero .lvl { min-width: 36px; height: 36px; font-size: 15px; right: -12px; bottom: -12px; }
+    .profile-hero .pname { font-size: 30px; font-weight: 800; line-height: 1.1; }
+    .profile-hero .ptitle { color: var(--accent); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; margin-top: 4px; }
+    .profile-hero .facts { display: flex; gap: 22px; margin-top: 14px; flex-wrap: wrap; }
+    .profile-hero .facts b { display: block; font-size: 18px; }
+    .profile-hero .badges { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; max-width: 320px; justify-content: flex-end; }
+    .sbadge { width: 54px; text-align: center; font-size: 10px; color: var(--muted); }
+    .sbadge div { width: 46px; height: 46px; margin: 0 auto 3px; border-radius: 50%; display: grid; place-items: center; font-size: 22px;
+      background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--season) 70%, #fff 10%), color-mix(in srgb, var(--season) 40%, #070b10)); box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); }
+    .showcase { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .slot { border-radius: 10px; background: var(--surface-2); border: 1px dashed var(--border-strong); padding: 14px; text-align: center; display: grid; gap: 8px; justify-items: center; }
+    .slot .ico { width: 72px; height: 72px; border-radius: 10px; display: grid; place-items: center; font-size: 40px;
+      background: radial-gradient(circle at 30% 25%, #3c5f8a, #1d2b45); box-shadow: inset 0 0 0 1px rgba(232, 182, 76, .6), 0 0 18px rgba(232, 182, 76, .15); }
+    .slot.empty .ico { background: var(--surface-3); box-shadow: none; opacity: .5; }
+    .slot .nm { font-weight: 700; }
+    .slot select { width: 100%; }
+    .custom h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 18px 0 8px; }
+    .custom select { min-width: 260px; }
+    .pick-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pick { width: 64px; height: 64px; border-radius: 10px; font-size: 32px; padding: 0; position: relative; background: var(--surface-2); }
+    .pick[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; background: var(--surface-3); }
+    .pick.locked { filter: grayscale(1); opacity: .35; cursor: help; }
+    .pick.locked::after { content: '🔒'; position: absolute; right: 2px; bottom: 0; font-size: 13px; filter: none; }
+    .pick.frame { font-size: 12px; width: auto; min-width: 110px; height: 44px; padding: 0 12px; }
+    .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+    .theme-card { padding: 0; border-radius: 10px; overflow: hidden; text-align: left; display: block; background: var(--surface-2); }
+    .theme-card[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .theme-card.locked { cursor: help; }
+    .theme-card.locked .sw { filter: grayscale(.8); opacity: .45; }
+    .theme-card .sw { height: 56px; display: grid; grid-template-columns: 1fr 1fr 1fr 18px; }
+    .theme-card .tx { padding: 8px 10px; }
+    .theme-card .tx b { display: block; font-size: 13px; }
+    .theme-card .tx span { font-size: 11px; color: var(--muted); }
+
     /* ---------- Ajustes ---------- */
     .settings h3 { font-size: 13px; margin-bottom: 8px; }
     .field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
@@ -178,12 +283,17 @@
 
     @media (max-width: 1000px) {
       .shelf.recent { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+      .promo { grid-template-columns: 1fr; }
       .library { grid-template-columns: 1fr; }
       .side { position: static; max-height: none; }
       .detail, .grid2, .profile { grid-template-columns: 1fr; }
       .tiles { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
       .hero .txt { right: 32px; }
       .hero .bg-art { opacity: .5; }
+      .season-hero { grid-template-columns: 1fr; }
+      .season-hero .big-emoji { right: 10px; opacity: .35; }
+      .showcase { grid-template-columns: 1fr; }
+      .profile-hero .badges { margin-left: 0; justify-content: flex-start; }
     }
     @media (max-width: 640px) {
       .top-inner { gap: 10px; padding: 0 16px; }
@@ -205,18 +315,20 @@
       <a class="wordmark" href="#biblioteca"><img src="icons/icon32.png" alt=""><span>SEDEAM</span></a>
       <nav>
         <a href="#biblioteca" data-tab="biblioteca">Biblioteca</a>
+        <a href="#temporada" data-tab="temporada">Temporada</a>
         <a href="#estadisticas" data-tab="estadisticas">Estadísticas</a>
         <a href="#logros" data-tab="logros">Logros</a>
+        <a href="#perfil" data-tab="perfil">Perfil</a>
         <a href="#ajustes" data-tab="ajustes">Ajustes</a>
       </nav>
-      <div class="me-chip">
+      <a class="me-chip" href="#perfil">
         <div class="who"><b id="chip-title"></b><span id="chip-status"></span></div>
         <div class="avatar" id="chip-avatar" aria-hidden="true">🧑‍💼<span class="lvl" id="chip-lvl">1</span></div>
-      </div>
+      </a>
     </div>
   </div>
   <div class="update-banner" id="update-banner" hidden>
-    <div><span id="update-text"></span><a class="btn" href="#ajustes">Cómo actualizar</a></div>
+    <div><span id="update-text"></span><a class="btn" id="update-link" href="#ajustes">Cómo actualizar</a></div>
   </div>
 
   <main>
@@ -230,6 +342,46 @@
           <div id="side-list"></div>
         </aside>
         <div id="lib-main"></div>
+      </div>
+    </section>
+
+    <!-- TEMPORADA -->
+    <section class="view" id="temporada" hidden>
+      <div class="season-hero" id="season-hero"></div>
+      <div class="card">
+        <div class="card-head"><h2>Pase de temporada</h2><span class="muted" id="pass-sub"></span></div>
+        <div class="pass" id="pass"></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-head"><h2>Próximos plazos</h2><span class="muted">Orientativos: manda el calendario oficial de la AEAT</span></div>
+          <div class="deadlines" id="deadlines"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Tus temporadas</h2><span class="muted">🥉 nivel 5 · 🥈 nivel 15 · 🥇 nivel 30</span></div>
+          <div class="season-list" id="season-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PERFIL -->
+    <section class="view" id="perfil" hidden>
+      <div class="card profile-hero" id="profile-hero"></div>
+      <div class="card">
+        <div class="card-head"><h2>Vitrina de logros</h2><span class="muted">Tus 3 logros favoritos, a la vista</span></div>
+        <div class="showcase" id="showcase"></div>
+      </div>
+      <div class="card custom">
+        <div class="card-head"><h2>Personalizar</h2><span class="muted">Lo bloqueado se gana subiendo de nivel, en la temporada o con logros</span></div>
+        <div class="field"><label for="p-name">Nombre visible</label><input id="p-name" maxlength="30" placeholder="Gestor/a"></div>
+        <h3>Título</h3>
+        <select id="pick-title"></select>
+        <h3>Avatar</h3>
+        <div class="pick-grid" id="pick-avatar"></div>
+        <h3>Tema de color</h3>
+        <div class="theme-grid" id="pick-theme"></div>
+        <h3>Marco</h3>
+        <div class="pick-grid" id="pick-frame"></div>
       </div>
     </section>
 
@@ -328,6 +480,9 @@
         <div class="field"><input type="checkbox" id="toast-page"><label for="toast-page">Mostrar la tarjeta dentro de la sede que tengo abierta, como en los juegos</label></div>
         <div class="field"><input type="checkbox" id="sound"><label for="sound">Con sonido</label></div>
         <div class="field"><input type="checkbox" id="sysnotif"><label for="sysnotif">Si no se puede mostrar en la página, usar la notificación del sistema</label></div>
+        <div class="field" style="margin-top:10px"><input type="checkbox" id="dl-alerts"><label for="dl-alerts">Recordarme los plazos</label>
+          <select id="dl-days" aria-label="Con cuánta antelación"><option value="1">la víspera</option><option value="3">3 días antes</option><option value="7">7 días antes</option></select>
+          <span class="muted">(y también la víspera y el mismo día)</span></div>
         <div class="actions" style="margin-top:12px">
           <button class="primary" id="test-toast">Probar aviso</button>
           <button id="test-system">Probar notificación del sistema</button>

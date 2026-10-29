@@ -17,3 +17,4 @@ export const REPO = {
 export const REMOTE_ENABLED = REPO.owner !== 'TU_USUARIO';
 export const rawUrl = (path) => `https://raw.githubusercontent.com/${REPO.owner}/${REPO.name}/${REPO.branch}/${path}`;
 export const repoUrl = () => `https://github.com/${REPO.owner}/${REPO.name}`;
+export const releasesUrl = () => `${repoUrl()}/releases/latest`;

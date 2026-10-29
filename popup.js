@@ -1,6 +1,7 @@
-import { HOUR, addDays, dayKey, fmtAgo, fmtDur, fmtHours, levelFor, sumAll, sumRange, total } from './lib/core.js';
+import { HOUR, addDays, dayKey, fmtAgo, fmtDur, fmtHours, sumAll, sumRange, total } from './lib/core.js';
+import { daysUntil, seasonAt, seasonProgress, upcomingDeadlines } from './lib/calendar.js';
 import { allGames } from './lib/games.js';
-import { capsule, el, fill, levelColor, loadAll, updateAvailable, withLive } from './lib/view.js';
+import { applyTheme, capsule, el, fill, fmtCountdown, loadAll, paintAvatar, profileFor, updateAvailable, withLive } from './lib/view.js';
 
 const $ = (id) => document.getElementById(id);
 let state = null;
@@ -21,13 +22,13 @@ function render() {
   $('ver').textContent = `v${chrome.runtime.getManifest().version}`;
   const upd = updateAvailable(state.updateStatus);
   $('update').hidden = !upd;
-  if (upd) $('update').textContent = `⬇️ Hay una versión nueva (${state.updateStatus.published}). Ver cómo actualizar →`;
+  if (upd) $('update').textContent = `⬇️ Hay una versión nueva (${state.updateStatus.published}). Descargar →`;
 
-  const lv = levelFor(grand, catalog.levels);
-  $('lvl').textContent = lv.level;
-  $('avatar').style.setProperty('--lvl', levelColor(lv.level));
-  $('avatar').classList.toggle('playing', !!live);
-  $('title').textContent = lv.title;
+  const { profile, lv } = profileFor(state, data);
+  applyTheme(profile.theme);
+  paintAvatar($('avatar'), profile, lv.level, !!live);
+  $('name').textContent = profile.name;
+  $('title').textContent = profile.titleText;
   fill($('status'), 
     live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) : el('span', { class: 'status-online' }, `Nivel ${lv.level} · ${fmtHours(total(two))} en las últimas 2 semanas`),
   );
@@ -42,6 +43,26 @@ function render() {
     $('now-name').textContent = live.name;
     const run = data.run && data.run.game === live.id ? data.run.ms : 0;
     $('now-session').textContent = fmtDur(run);
+  }
+
+  // Temporada en curso y próximo plazo.
+  if (catalog.seasons) {
+    const season = seasonAt(catalog.seasons, new Date(now));
+    const sp = seasonProgress(data, catalog.seasons, season);
+    $('season').style.setProperty('--season', season.color);
+    $('season-name').textContent = `${season.emoji} ${season.label}`;
+    $('season-tier').textContent = `Nv. ${sp.tier}/${catalog.seasons.tiers}`;
+    $('season-bar').style.width = `${Math.round(sp.progress * 100)}%`;
+    $('season-sub').textContent = `Acaba ${fmtCountdown(daysUntil(season.end, new Date(now)))}`;
+  }
+  const next = upcomingDeadlines(catalog.deadlines, new Date(now), { limit: 1 })[0];
+  $('deadline').hidden = !next;
+  if (next) {
+    const d = daysUntil(next.date, new Date(now));
+    $('deadline').classList.toggle('soon', d <= 3);
+    $('deadline-when').textContent = fmtCountdown(d);
+    $('deadline-title').textContent = next.title;
+    $('deadline-sub').textContent = `${next.date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}${next.models ? ` · ${next.models}` : ''}`;
   }
 
   // Como en cualquier biblioteca: primero lo jugado más recientemente.

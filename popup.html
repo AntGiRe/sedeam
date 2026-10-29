@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Sedeam</title>
+  <script src="theme-boot.js"></script>
   <link rel="stylesheet" href="ui.css">
   <style>
     body { width: 390px; background: var(--page); }
@@ -13,6 +14,7 @@
     .me { display: flex; gap: 14px; align-items: center; padding: 16px 14px 14px; }
     .me-info { flex: 1; min-width: 0; }
     .me-title { font-size: 15px; font-weight: 700; }
+    .me-rank { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-top: 1px; }
     .me-status { font-size: 12px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .me .xp { margin-top: 8px; }
 
@@ -21,6 +23,7 @@
       display: flex; align-items: center; gap: 12px; padding: 10px 12px;
       background: linear-gradient(90deg, color-mix(in srgb, var(--game) 45%, #0a0f15), #0f1a12);
       border: 1px solid rgba(139, 212, 91, .35);
+      color: #fff;
     }
     .now[hidden] { display: none; }
     .now .capsule { width: 40px; flex: none; }
@@ -30,6 +33,20 @@
     .now .time b { font-size: 16px; font-variant-numeric: tabular-nums; display: block; }
     .now .time span { font-size: 11px; color: var(--text-2); }
 
+    .strip { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 14px 12px; }
+    .mini-card { display: block; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+    .mini-card:hover { background: var(--surface-2); }
+    .mini-card[hidden] { display: none; }
+    .mini-card .row { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+    .mini-card .k { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mini-card b { font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .mini-card .xp { margin-top: 6px; height: 5px; }
+    #season .xp > i { background: linear-gradient(90deg, color-mix(in srgb, var(--season) 70%, #000), var(--season)); }
+    .mini-card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mini-card .dl-title { font-size: 12px; font-weight: 600; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #deadline.soon { border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
+    #deadline.soon b { color: var(--danger); }
+    .now .time span { color: rgba(255, 255, 255, .7) !important; }
     .section { padding: 0 14px; display: flex; justify-content: space-between; align-items: baseline; margin: 4px 0 6px; }
     ul { list-style: none; margin: 0; padding: 0 6px; max-height: 300px; overflow-y: auto; }
     li { display: flex; gap: 12px; align-items: center; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
@@ -45,6 +62,7 @@
     .fresh { margin: 0 14px 12px; display: grid; gap: 6px; }
     .fresh[hidden] { display: none; }
     .fresh a {
+      color: #fff !important;
       display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 4px; text-decoration: none; color: inherit;
       background: linear-gradient(135deg, #1a2433, #2c4766); box-shadow: inset 0 0 0 1px rgba(232, 182, 76, .45);
     }
@@ -63,12 +81,13 @@
     <a class="wordmark" href="app.html#biblioteca" target="_blank"><img src="icons/icon32.png" alt=""><span>SEDEAM</span></a>
     <span class="ver" id="ver"></span>
   </div>
-  <a class="update" id="update" href="app.html#ajustes" target="_blank" hidden></a>
+  <a class="update" id="update" href="https://github.com/AntGiRe/sedeam/releases/latest" target="_blank" hidden></a>
 
   <div class="me">
     <div class="avatar" id="avatar" aria-hidden="true">🧑‍💼<span class="lvl" id="lvl">1</span></div>
     <div class="me-info">
-      <div class="me-title" id="title">Becario</div>
+      <div class="me-title" id="name">Gestor/a</div>
+      <div class="me-rank" id="title">Becario</div>
       <div class="me-status" id="status"></div>
       <div class="xp" role="progressbar" aria-label="Progreso al siguiente nivel"><i id="xp" style="width:0"></i></div>
       <div class="xp-label" id="xp-label"></div>
@@ -84,6 +103,19 @@
       <div class="name" id="now-name"></div>
     </div>
     <div class="time"><b id="now-session"></b><span>esta sesión</span></div>
+  </div>
+
+  <div class="strip">
+    <a class="mini-card" id="season" href="app.html#temporada" target="_blank">
+      <div class="row"><span class="k" id="season-name">Temporada</span><b id="season-tier"></b></div>
+      <div class="xp"><i id="season-bar" style="width:0"></i></div>
+      <div class="sub" id="season-sub"></div>
+    </a>
+    <a class="mini-card" id="deadline" href="app.html#temporada" target="_blank" hidden>
+      <div class="row"><span class="k">Próximo plazo</span><b id="deadline-when"></b></div>
+      <div class="dl-title" id="deadline-title"></div>
+      <div class="sub" id="deadline-sub"></div>
+    </a>
   </div>
 
   <div class="section">

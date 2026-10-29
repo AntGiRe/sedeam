@@ -1,6 +1,6 @@
 {
-  "catalogVersion": 1,
-  "minAppVersion": "0.2.0",
+  "catalogVersion": 2,
+  "minAppVersion": "0.4.0",
   "updated": "2026-10-29",
   "games": [
     {
@@ -651,6 +651,11 @@
   "news": [
     {
       "date": "2026-10-29",
+      "title": "Llegan las temporadas",
+      "body": "Cada trimestre fiscal es una temporada con su pase de 30 niveles. Desbloquea temas de color, avatares, marcos y títulos, y personaliza tu perfil. Además: calendario de plazos con cuenta atrás."
+    },
+    {
+      "date": "2026-10-29",
       "title": "Avisos de logro como en las consolas",
       "body": "Al desbloquear un logro aparece una tarjeta con sonido en la esquina de la sede que estés usando. Se puede probar y ajustar en Ajustes → Avisos."
     },
@@ -658,6 +663,421 @@
       "date": "2026-10-29",
       "title": "Horas en Sede ahora es Sedeam",
       "body": "Nueva biblioteca, logros con barra de progreso, ficha de cada juego y actualizaciones automáticas del catálogo."
+    }
+  ],
+  "deadlines": [
+    {
+      "id": "t4",
+      "title": "Cierre del 4T y resúmenes anuales",
+      "models": "303 · 130 · 111 · 115 · 349 · 390 · 190 · 180",
+      "game": "aeat",
+      "months": [
+        1
+      ],
+      "day": 30,
+      "major": true
+    },
+    {
+      "id": "t1",
+      "title": "Declaraciones del 1T",
+      "models": "303 · 130 · 111 · 115 · 349",
+      "game": "aeat",
+      "months": [
+        4
+      ],
+      "day": 20,
+      "major": true
+    },
+    {
+      "id": "t2",
+      "title": "Declaraciones del 2T",
+      "models": "303 · 130 · 111 · 115 · 349",
+      "game": "aeat",
+      "months": [
+        7
+      ],
+      "day": 20,
+      "major": true
+    },
+    {
+      "id": "t3",
+      "title": "Declaraciones del 3T",
+      "models": "303 · 130 · 111 · 115 · 349",
+      "game": "aeat",
+      "months": [
+        10
+      ],
+      "day": 20,
+      "major": true
+    },
+    {
+      "id": "dom-t4",
+      "title": "Domiciliación del 4T",
+      "models": "303 · 130 · 111 · 115",
+      "game": "aeat",
+      "months": [
+        1
+      ],
+      "day": 25
+    },
+    {
+      "id": "dom-tri",
+      "title": "Domiciliación del trimestre",
+      "models": "303 · 130 · 111 · 115",
+      "game": "aeat",
+      "months": [
+        4,
+        7,
+        10
+      ],
+      "day": 15
+    },
+    {
+      "id": "347",
+      "title": "Operaciones con terceros",
+      "models": "347",
+      "game": "aeat",
+      "months": [
+        2
+      ],
+      "day": "last"
+    },
+    {
+      "id": "renta-dom",
+      "title": "Renta con domiciliación",
+      "models": "100 · 714",
+      "game": "aeat",
+      "months": [
+        6
+      ],
+      "day": 25
+    },
+    {
+      "id": "renta",
+      "title": "Fin de la campaña de la Renta",
+      "models": "100 · 714",
+      "game": "aeat",
+      "months": [
+        6
+      ],
+      "day": 30,
+      "major": true
+    },
+    {
+      "id": "is",
+      "title": "Impuesto sobre Sociedades",
+      "models": "200",
+      "game": "aeat",
+      "months": [
+        7
+      ],
+      "day": 25
+    },
+    {
+      "id": "ss",
+      "title": "Cotizaciones del mes",
+      "models": "Sistema RED",
+      "game": "segsocial",
+      "day": "last",
+      "shift": "before"
+    }
+  ],
+  "seasons": {
+    "hoursPerTier": 4,
+    "tiers": 30,
+    "ends": [
+      {
+        "quarter": "4T",
+        "month": 1,
+        "day": 30,
+        "yearOffset": -1
+      },
+      {
+        "quarter": "1T",
+        "month": 4,
+        "day": 20,
+        "yearOffset": 0
+      },
+      {
+        "quarter": "2T",
+        "month": 7,
+        "day": 20,
+        "yearOffset": 0
+      },
+      {
+        "quarter": "3T",
+        "month": 10,
+        "day": 20,
+        "yearOffset": 0
+      }
+    ],
+    "names": {
+      "1T": {
+        "name": "Primavera fiscal",
+        "emoji": "🌱",
+        "color": "#1baf7a"
+      },
+      "2T": {
+        "name": "La temporada de la Renta",
+        "emoji": "🧾",
+        "color": "#3987e5"
+      },
+      "3T": {
+        "name": "Verano (¿qué verano?)",
+        "emoji": "🏖️",
+        "color": "#c98500"
+      },
+      "4T": {
+        "name": "Cierre de año",
+        "emoji": "🎆",
+        "color": "#d55181"
+      }
+    }
+  },
+  "rewards": [
+    {
+      "id": "theme-sede",
+      "type": "theme",
+      "name": "Sede",
+      "desc": "El azul de siempre.",
+      "unlock": {
+        "default": true
+      }
+    },
+    {
+      "id": "theme-papel",
+      "type": "theme",
+      "name": "Papel timbrado",
+      "desc": "Tonos sepia, como un expediente de 1987.",
+      "unlock": {
+        "level": 3
+      }
+    },
+    {
+      "id": "theme-boe",
+      "type": "theme",
+      "name": "Modo BOE",
+      "desc": "Blanco y negro. Sin distracciones. Sin alegría.",
+      "unlock": {
+        "level": 5
+      }
+    },
+    {
+      "id": "theme-oro",
+      "type": "theme",
+      "name": "Inspector dorado",
+      "desc": "Negro y oro, para quien ya lo ha visto todo.",
+      "unlock": {
+        "level": 8
+      }
+    },
+    {
+      "id": "theme-cierre",
+      "type": "theme",
+      "name": "Noche de cierre",
+      "desc": "Rojo oscuro de día 20 a las 23:40.",
+      "unlock": {
+        "seasonTier": 10
+      }
+    },
+    {
+      "id": "theme-renta",
+      "type": "theme",
+      "name": "Campaña de la Renta",
+      "desc": "Verde borrador aceptado.",
+      "unlock": {
+        "seasonTier": 20
+      }
+    },
+    {
+      "id": "avatar-gestor",
+      "type": "avatar",
+      "name": "Gestor",
+      "emoji": "🧑‍💼",
+      "unlock": {
+        "default": true
+      }
+    },
+    {
+      "id": "avatar-gestora",
+      "type": "avatar",
+      "name": "Gestora",
+      "emoji": "👩‍💼",
+      "unlock": {
+        "default": true
+      }
+    },
+    {
+      "id": "avatar-gestor2",
+      "type": "avatar",
+      "name": "Gestor clásico",
+      "emoji": "👨‍💼",
+      "unlock": {
+        "default": true
+      }
+    },
+    {
+      "id": "avatar-abaco",
+      "type": "avatar",
+      "name": "Ábaco",
+      "emoji": "🧮",
+      "unlock": {
+        "level": 2
+      }
+    },
+    {
+      "id": "avatar-robot",
+      "type": "avatar",
+      "name": "Automatizado",
+      "emoji": "🤖",
+      "unlock": {
+        "level": 4
+      }
+    },
+    {
+      "id": "avatar-mago",
+      "type": "avatar",
+      "name": "Mago de los modelos",
+      "emoji": "🧙",
+      "unlock": {
+        "level": 7
+      }
+    },
+    {
+      "id": "avatar-cafe",
+      "type": "avatar",
+      "name": "Cafetera humana",
+      "emoji": "☕",
+      "unlock": {
+        "achievement": "habitual"
+      }
+    },
+    {
+      "id": "avatar-buho",
+      "type": "avatar",
+      "name": "Búho fiscal",
+      "emoji": "🦉",
+      "unlock": {
+        "achievement": "noctambulo"
+      }
+    },
+    {
+      "id": "avatar-gallo",
+      "type": "avatar",
+      "name": "Gallo madrugador",
+      "emoji": "🐓",
+      "unlock": {
+        "achievement": "madrugador"
+      }
+    },
+    {
+      "id": "avatar-playa",
+      "type": "avatar",
+      "name": "Vacaciones (en teoría)",
+      "emoji": "🏖️",
+      "unlock": {
+        "achievement": "agosto"
+      }
+    },
+    {
+      "id": "avatar-renta",
+      "type": "avatar",
+      "name": "Borrador confirmado",
+      "emoji": "🧾",
+      "unlock": {
+        "achievement": "renta"
+      }
+    },
+    {
+      "id": "avatar-fuego",
+      "type": "avatar",
+      "name": "En racha",
+      "emoji": "🔥",
+      "unlock": {
+        "achievement": "racha20"
+      }
+    },
+    {
+      "id": "avatar-corona",
+      "type": "avatar",
+      "name": "Realeza tributaria",
+      "emoji": "👑",
+      "unlock": {
+        "achievement": "leyenda"
+      }
+    },
+    {
+      "id": "avatar-heroe",
+      "type": "avatar",
+      "name": "Superhéroe del plazo",
+      "emoji": "🦸",
+      "unlock": {
+        "seasonTier": 25
+      }
+    },
+    {
+      "id": "frame-bronce",
+      "type": "frame",
+      "name": "Marco de bronce",
+      "unlock": {
+        "seasonTier": 5
+      }
+    },
+    {
+      "id": "frame-plata",
+      "type": "frame",
+      "name": "Marco de plata",
+      "unlock": {
+        "seasonTier": 15
+      }
+    },
+    {
+      "id": "frame-oro",
+      "type": "frame",
+      "name": "Marco de oro",
+      "unlock": {
+        "seasonTier": 30
+      }
+    },
+    {
+      "id": "frame-fuego",
+      "type": "frame",
+      "name": "Marco en llamas",
+      "unlock": {
+        "achievement": "racha20"
+      }
+    },
+    {
+      "id": "title-veterano",
+      "type": "title",
+      "name": "Veterano de temporada",
+      "unlock": {
+        "seasonTier": 15
+      }
+    },
+    {
+      "id": "title-leyenda",
+      "type": "title",
+      "name": "Leyenda de temporada",
+      "unlock": {
+        "seasonTier": 30
+      }
+    },
+    {
+      "id": "title-clave",
+      "type": "title",
+      "name": "Amigo íntimo de Cl@ve",
+      "unlock": {
+        "level": 2
+      }
+    },
+    {
+      "id": "title-honor",
+      "type": "title",
+      "name": "Funcionario honorífico",
+      "unlock": {
+        "level": 6
+      }
     }
   ]
 }

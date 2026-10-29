@@ -7,11 +7,14 @@ import {
 import { evaluate, progress } from '../lib/rules.js';
 import { matchGame, normalizeDomain, allGames } from '../lib/games.js';
 import { validateCatalog, pickCatalog } from '../lib/catalog.js';
+import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, shiftToWorkday, daysUntil } from '../lib/calendar.js';
+import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
 
 const catalogJson = JSON.parse(readFileSync(new URL('../catalog.json', import.meta.url)));
 const catalog = validateCatalog(catalogJson);
 const manifest = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.url)));
 const t = (s) => new Date(s).getTime();
+const dayKeyOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 let ok = 0;
 const test = (name, fn) => { fn(); ok++; console.log('✓', name); };
 
@@ -28,11 +31,12 @@ test('el catálogo incluido es válido y no pierde nada al sanearlo', () => {
 });
 
 test('se usa el catálogo remoto solo si es más nuevo y compatible', () => {
-  const newer = { ...catalogJson, catalogVersion: 2 };
-  assert.equal(pickCatalog(catalogJson, newer, '0.2.0').source, 'remote');
-  assert.equal(pickCatalog(catalogJson, { ...newer, minAppVersion: '9.0.0' }, '0.2.0').source, 'bundled');
-  assert.equal(pickCatalog(catalogJson, { ...catalogJson }, '0.2.0').source, 'bundled');
-  assert.equal(pickCatalog(catalogJson, { catalogVersion: 5, games: 'basura' }, '0.2.0').source, 'bundled');
+  const v = manifest.version;
+  const newer = { ...catalogJson, catalogVersion: catalogJson.catalogVersion + 1 };
+  assert.equal(pickCatalog(catalogJson, newer, v).source, 'remote');
+  assert.equal(pickCatalog(catalogJson, { ...newer, minAppVersion: '9.0.0' }, v).source, 'bundled');
+  assert.equal(pickCatalog(catalogJson, { ...catalogJson }, v).source, 'bundled');
+  assert.equal(pickCatalog(catalogJson, { catalogVersion: 5, games: 'basura' }, v).source, 'bundled');
   // Un logro con un tipo de regla desconocido se descarta, el resto sigue.
   const extra = validateCatalog({ ...newer, achievements: [...catalogJson.achievements, { id: 'x', name: 'X', rule: { type: 'futuro' } }] });
   assert.equal(extra.achievements.length, catalogJson.achievements.length);
@@ -120,6 +124,58 @@ test('niveles y formatos', () => {
   assert.equal(fmtHours(2.5 * HOUR), '2,5 h');
   assert.equal(fmtDur(192 * MIN), '3 h 12 min');
   assert.equal(compareVersions('0.10.0', '0.9.9'), 1);
+});
+
+test('plazos: fechas, fin de semana y orden', () => {
+  // 20 de abril de 2025 fue domingo: pasa al lunes 21.
+  assert.equal(shiftToWorkday(new Date(2025, 3, 20)).getDate(), 21);
+  const list = deadlinesBetween(catalog.deadlines, new Date(2026, 9, 1), new Date(2026, 9, 31)).map((d) => `${d.id}:${d.date.getDate()}`);
+  assert.deepEqual(list, ['dom-tri:15', 't3:20', 'ss:30']);
+  const next = upcomingDeadlines(catalog.deadlines, new Date(2026, 9, 29));
+  assert.equal(next[0].id, 'ss'); // 31 oct 2026 es sábado: las cotizaciones se adelantan al viernes 30
+  assert.equal(next[0].date.getDate(), 30);
+  assert.equal(daysUntil(next[0].date, new Date(2026, 9, 29, 23, 0)), 1);
+  assert.ok(next.some((d) => d.id === 'dom-t4') && next.some((d) => d.id === 't4'));
+  // 347: último día de febrero, también en bisiesto.
+  assert.equal(deadlinesBetween(catalog.deadlines, new Date(2028, 1, 1), new Date(2028, 1, 29)).find((d) => d.id === '347').date.getDate(), 29);
+});
+
+test('temporadas: límites y progreso', () => {
+  const s = seasonAt(catalog.seasons, new Date(2026, 9, 29));
+  assert.equal(s.id, '4T-2026');
+  assert.equal(dayKeyOf(s.start), '2026-10-21');
+  assert.equal(dayKeyOf(s.end), '2027-02-01'); // 30 ene 2027 es sábado
+  assert.equal(seasonAt(catalog.seasons, new Date(2026, 9, 20)).id, '3T-2026');
+  assert.equal(seasonAt(catalog.seasons, new Date(2027, 1, 2)).id, '1T-2027');
+  assert.equal(seasonAt(catalog.seasons, new Date(2026, 5, 30)).id, '2T-2026');
+  const d = emptyData();
+  commitSegment(d, 'aeat', t('2026-10-21T08:00'), t('2026-10-21T17:00')); // 9 h → nivel 2 (4 h por nivel)
+  commitSegment(d, 'aeat', t('2026-07-01T08:00'), t('2026-07-01T20:30')); // 12,5 h antes del 20 de julio: temporada 2T → nivel 3
+  const h = seasonHistory(d, catalog.seasons, new Date(2026, 9, 29));
+  assert.deepEqual(h.seasons.map((x) => [x.id, x.tier]), [['2T-2026', 3], ['3T-2026', 0], ['4T-2026', 2]]);
+  assert.equal(h.best, 3);
+});
+
+test('recompensas y perfil', () => {
+  const d = emptyData();
+  let ctx = rewardContext(d, catalog, new Date(2026, 9, 29));
+  const byId = (id) => catalog.rewards.find((r) => r.id === id);
+  assert.ok(isUnlocked(byId('theme-sede'), ctx));
+  assert.ok(!isUnlocked(byId('theme-papel'), ctx));
+  // Elegir algo bloqueado no tiene efecto: se queda lo de por defecto.
+  let p = resolveProfile({ profile: { theme: 'theme-papel', avatar: 'avatar-buho', showcase: ['clave'] } }, catalog, ctx);
+  assert.equal(p.theme, 'sede');
+  assert.equal(p.avatar, '🧑‍💼');
+  assert.deepEqual(p.showcase, []);
+  commitSegment(d, 'aeat', t('2026-10-01T00:00'), t('2026-10-02T06:00')); // 30 h → nivel 3, y de noche
+  evaluate(d, catalog.achievements, t('2026-10-29T00:00'));
+  ctx = rewardContext(d, catalog, new Date(2026, 9, 29));
+  p = resolveProfile({ profile: { theme: 'theme-papel', avatar: 'avatar-buho', showcase: ['clave', 'noctambulo', 'no-existe'] } }, catalog, ctx);
+  assert.equal(p.theme, 'papel');
+  assert.equal(p.avatar, '🦉');
+  assert.deepEqual(p.showcase, ['clave', 'noctambulo']);
+  assert.ok(titleOptions(catalog, ctx).some((o) => o.id === 'rank:3'));
+  for (const r of catalog.rewards) if (r.unlock.achievement) assert.ok(catalog.achievements.some((a) => a.id === r.unlock.achievement), r.id);
 });
 
 console.log(`\n${ok} pruebas OK`);
