@@ -1,6 +1,6 @@
 import { HOUR, addDays, dayKey, fmtAgo, fmtDur, fmtHours, levelFor, sumAll, sumRange, total } from './lib/core.js';
 import { allGames } from './lib/games.js';
-import { capsule, el, levelColor, loadAll, updateAvailable, withLive } from './lib/view.js';
+import { capsule, el, fill, levelColor, loadAll, updateAvailable, withLive } from './lib/view.js';
 
 const $ = (id) => document.getElementById(id);
 let state = null;
@@ -28,7 +28,7 @@ function render() {
   $('avatar').style.setProperty('--lvl', levelColor(lv.level));
   $('avatar').classList.toggle('playing', !!live);
   $('title').textContent = lv.title;
-  $('status').replaceChildren(
+  fill($('status'), 
     live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) : el('span', { class: 'status-online' }, `Nivel ${lv.level} · ${fmtHours(total(two))} en las últimas 2 semanas`),
   );
   $('xp').style.width = `${Math.round(lv.progress * 100)}%`;
@@ -38,7 +38,7 @@ function render() {
   $('now').hidden = !live;
   if (live) {
     $('now').style.setProperty('--game', live.color);
-    $('now-art').replaceChildren(capsule(live, { mini: true, style: 'width:40px' }));
+    fill($('now-art'), capsule(live, { mini: true, style: 'width:40px' }));
     $('now-name').textContent = live.name;
     const run = data.run && data.run.game === live.id ? data.run.ms : 0;
     $('now-session').textContent = fmtDur(run);
@@ -48,7 +48,7 @@ function render() {
   const sorted = games
     .filter((g) => g.enabled || all[g.id])
     .sort((a, b) => (data.lastPlayed[b.id] || 0) - (data.lastPlayed[a.id] || 0) || (all[b.id] || 0) - (all[a.id] || 0));
-  $('games').replaceChildren(
+  fill($('games'), 
     ...sorted.map((g) => {
       const ms = all[g.id] || 0;
       const isLive = live && live.id === g.id;
@@ -70,7 +70,7 @@ function render() {
   const achievements = catalog.achievements;
   const unlocked = Object.entries(data.achievements).filter(([id]) => achievements.some((a) => a.id === id)).sort((a, b) => b[1] - a[1]);
   const lastA = unlocked.length && achievements.find((a) => a.id === unlocked[0][0]);
-  $('last').replaceChildren(
+  fill($('last'), 
     lastA ? el('span', { class: 'ico', 'aria-hidden': 'true' }, lastA.emoji) : null,
     el('div', { style: 'min-width:0' }, el('span', { class: 'muted' }, `Logros ${unlocked.length}/${achievements.length}`), lastA ? el('b', {}, lastA.name) : el('b', { class: 'secondary' }, 'Entra en una sede para empezar')),
   );
@@ -86,7 +86,7 @@ async function showFresh() {
   const [{ unseen = [] }, { catalog }] = await Promise.all([chrome.storage.local.get('unseen'), state ? Promise.resolve(state) : loadAll()]);
   const list = unseen.map((id) => catalog.achievements.find((a) => a.id === id)).filter(Boolean).slice(-3).reverse();
   $('fresh').hidden = !list.length;
-  $('fresh').replaceChildren(
+  fill($('fresh'), 
     ...list.map((a) =>
       el('a', { href: 'app.html#logros', target: '_blank' }, el('span', { class: 'ico', 'aria-hidden': 'true' }, a.emoji), el('div', { style: 'min-width:0' }, el('div', { class: 'k' }, '🏆 Logro desbloqueado'), el('b', {}, a.name))),
     ),

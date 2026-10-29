@@ -41,7 +41,9 @@
     achievements: { bienvenida: now - 290 * 864e5, clave: now - 289 * 864e5, habitual: now - 280 * 864e5, centenario: now - 220 * 864e5, maraton: now - 150 * 864e5, dia20: now - 9 * 864e5, doble: now - 288 * 864e5, racha5: now - 270 * 864e5, noctambulo: now - 40 * 864e5, notificado: now - 200 * 864e5, coleccionista: now - 120 * 864e5 },
   };
   const local = { updateStatus: { running: '0.2.0', published: '0.3.0', checkedAt: now - 20 * 60000 }, data, settings: { idleMinutes: 3, disabled: ['sepe'], customGames: [{ id: 'c_atc', name: 'ATC Canarias', emoji: '🌴', domains: ['gobiernodecanarias.org'] }], notifications: true } };
-  const session = { live: { game: 'aeat', start: now - 20000 } };
+  // ?vacio simula una instalación recién hecha, sin horas ni logros.
+  if (location.search.includes('vacio')) for (const k of Object.keys(local)) delete local[k];
+  const session = location.search.includes('vacio') ? {} : { live: { game: 'aeat', start: now - 20000 } };
   const pick = (store, keys) => Object.fromEntries((Array.isArray(keys) ? keys : [keys]).filter((k) => k in store).map((k) => [k, store[k]]));
   window.chrome = {
     storage: {

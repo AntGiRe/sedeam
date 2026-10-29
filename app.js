@@ -4,7 +4,7 @@ import {
 import { progress } from './lib/rules.js';
 import { allGames, normalizeDomain } from './lib/games.js';
 import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
-import { capsule, el, fmtProgress, levelColor, loadAll, updateAvailable, withLive } from './lib/view.js';
+import { capsule, el, fill, fmtProgress, levelColor, loadAll, updateAvailable, withLive } from './lib/view.js';
 import { showToasts } from './lib/toast.js';
 import { BRAND, REMOTE_ENABLED, REPO, repoUrl } from './config.js';
 
@@ -34,7 +34,7 @@ let fresh = new Set(); // logros recién desbloqueados que aún no habías visto
 
 const tip = $('tip');
 function showTip(evt, content) {
-  tip.replaceChildren(...content);
+  fill(tip, ...content);
   tip.hidden = false;
   const pad = 14;
   const r = tip.getBoundingClientRect();
@@ -121,7 +121,7 @@ function columnChart(container, items, { height = 220, single = null } = {}) {
     });
     root.append(hit);
   });
-  container.replaceChildren(root);
+  fill(container, root);
 }
 
 function lastDaysItems(n, gameFilter = null) {
@@ -148,7 +148,7 @@ function renderChrome() {
   const lv = levelFor(grand, st.catalog.levels);
   const live = st.live && byId[st.live.game];
   $('chip-title').textContent = lv.title;
-  $('chip-status').replaceChildren(live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) : el('span', { class: 'status-online' }, `Nivel ${lv.level} · ${fmtHours(grand)}`));
+  fill($('chip-status'), live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) : el('span', { class: 'status-online' }, `Nivel ${lv.level} · ${fmtHours(grand)}`));
   $('chip-lvl').textContent = lv.level;
   $('chip-avatar').style.setProperty('--lvl', levelColor(lv.level));
   $('chip-avatar').classList.toggle('playing', !!live);
@@ -177,7 +177,7 @@ function renderSide(current) {
   $('side-count').textContent = `Juegos (${list.length})`;
   if (current) $('home-link').removeAttribute('aria-current');
   else $('home-link').setAttribute('aria-current', 'page');
-  $('side-list').replaceChildren(
+  fill($('side-list'), 
     ...list.map((g) => {
       const playing = st.live?.game === g.id;
       const a = el(
@@ -220,7 +220,7 @@ function renderLibraryHome() {
   const list = games.filter((g) => g.name.toLowerCase().includes(search.toLowerCase()));
   const all = sumAll(data);
 
-  $('lib-main').replaceChildren(
+  fill($('lib-main'), 
     recent.length
       ? el('div', {}, el('div', { class: 'h-row' }, el('h2', {}, 'Jugados recientemente')), el('div', { class: 'shelf recent' }, recent.map((g) => shelfItem(g, { recent: true }))))
       : el('div', { class: 'card', style: 'margin-bottom:32px' }, el('h2', { style: 'font-size:16px;margin-bottom:4px' }, `Bienvenido a ${BRAND.name}`), el('p', { class: 'secondary', style: 'margin:0' }, 'Abre cualquier sede (Agencia Tributaria, Seguridad Social…) y el contador empezará solo. Tus horas aparecerán aquí.')),
@@ -266,7 +266,7 @@ function renderGame(g) {
   const last30 = sumRange(data, dayKey(addDays(now, -29)), dayKey(now))[g.id] || 0;
   const generic = st.catalog.achievements.filter((a) => !a.game && data.achievements[a.id]).length;
 
-  $('lib-main').replaceChildren(
+  fill($('lib-main'), 
     el(
       'div',
       { class: 'hero', style: `--game:${g.color}` },
@@ -330,7 +330,7 @@ function renderGame(g) {
   );
   const items = lastDaysItems(30, g);
   if (items.some((it) => it.total)) columnChart(chart, items, { height: 200, single: g.name });
-  else chart.replaceChildren(el('div', { class: 'empty' }, 'Sin partidas en los últimos 30 días.'));
+  else fill(chart, el('div', { class: 'empty' }, 'Sin partidas en los últimos 30 días.'));
 }
 
 function renderLibrary(sub) {
@@ -396,7 +396,7 @@ function renderProfile() {
     ['Este año', total(sumRange(data, `${now.getFullYear()}-01-01`, today)), String(now.getFullYear())],
     ['Total', grand, 'desde que llevas la cuenta'],
   ];
-  $('tiles').replaceChildren(...tiles.map(([k, ms, sub]) => el('div', { class: 'tile' }, el('div', { class: 'eyebrow' }, k), el('div', { class: 'v' }, ms >= HOUR ? fmtHours(ms) : fmtDur(ms)), el('div', { class: 's' }, sub))));
+  fill($('tiles'), ...tiles.map(([k, ms, sub]) => el('div', { class: 'tile' }, el('div', { class: 'eyebrow' }, k), el('div', { class: 'v' }, ms >= HOUR ? fmtHours(ms) : fmtDur(ms)), el('div', { class: 's' }, sub))));
 }
 
 function renderActivity() {
@@ -409,14 +409,14 @@ function renderActivity() {
     return { ...it, segments: games.map((g) => ({ name: g.name, color: g.color, ms: sums[g.id] || 0 })), total: total(sums) };
   });
   const periodTotal = items.reduce((a, it) => a + it.total, 0);
-  if (!periodTotal) $('chart').replaceChildren(el('div', { class: 'empty' }, 'Sin actividad en este periodo. Hacienda te echa de menos.'));
+  if (!periodTotal) fill($('chart'), el('div', { class: 'empty' }, 'Sin actividad en este periodo. Hacienda te echa de menos.'));
   else columnChart($('chart'), items);
 
   // Tabla de totales: hace de leyenda y de vista en tabla del gráfico.
   const sums = sumRange(data, b.items[0].from, b.items[b.items.length - 1].to);
   const rows = games.filter((g) => sums[g.id] > 0).sort((a, z) => sums[z.id] - sums[a.id]);
   const max = Math.max(1, ...rows.map((g) => sums[g.id]));
-  $('totals').replaceChildren(
+  fill($('totals'), 
     ...rows.map((g) =>
       el(
         'div',
@@ -487,16 +487,16 @@ function renderHeat() {
       root.append(r);
     }
   }
-  $('heat').replaceChildren(root);
+  fill($('heat'), root);
   $('heat-sub').textContent = `${fmtHours(yearTotal)} en ${active} días`;
-  $('heat-legend').replaceChildren(...HEAT.flatMap(([, c, l]) => [el('span', { class: 'sw', style: `background:${c}` }), el('span', { class: 't' }, l)]));
+  fill($('heat-legend'), ...HEAT.flatMap(([, c, l]) => [el('span', { class: 'sw', style: `background:${c}` }), el('span', { class: 't' }, l)]));
 }
 
 function renderHours() {
   const sums = new Array(24).fill(0);
   for (const arr of Object.values(data.hours)) arr.forEach((ms, h) => (sums[h] += ms));
   if (!total(sums)) {
-    $('hours').replaceChildren(el('div', { class: 'empty' }, 'Aún no hay datos.'));
+    fill($('hours'), el('div', { class: 'empty' }, 'Aún no hay datos.'));
     return;
   }
   const items = sums.map((ms, h) => ({
@@ -524,7 +524,7 @@ function renderRecords() {
     ['Días con actividad', String(daysActive), daysActive ? `Media: ${fmtDur(total(all) / daysActive)} por día` : ''],
     ['Logros', `${unlockedCount()}/${st.catalog.achievements.length}`, 'Pestaña Logros'],
   ];
-  $('records').replaceChildren(...rec.map(([k, v, sub]) => el('div', { class: 'tile' }, el('div', { class: 'eyebrow' }, k), el('div', { class: 'v' }, v), el('div', { class: 's' }, sub))));
+  fill($('records'), ...rec.map(([k, v, sub]) => el('div', { class: 'tile' }, el('div', { class: 'eyebrow' }, k), el('div', { class: 'v' }, v), el('div', { class: 's' }, sub))));
 }
 
 // ---------- Logros ----------
@@ -545,7 +545,7 @@ function renderAchievements() {
     ['general', 'Generales'],
     ...games.filter((g) => list.some((a) => a.game === g.id)).map((g) => [g.id, g.name]),
   ];
-  $('ach-filter').replaceChildren(
+  fill($('ach-filter'), 
     ...filters.map(([id, label]) =>
       el('button', { 'aria-pressed': String(achFilter === id), onclick: () => { achFilter = id; renderAchievements(); } }, label),
     ),
@@ -564,7 +564,7 @@ function renderAchievements() {
     return p ? Math.min(1, p.value / p.target) : 0;
   };
   const shown = list.filter(pass).sort((a, b) => score(b) - score(a));
-  $('ach-list').replaceChildren(...(shown.length ? shown.map((a) => achRow(a)) : [el('div', { class: 'empty' }, 'Nada por aquí.')]));
+  fill($('ach-list'), ...(shown.length ? shown.map((a) => achRow(a)) : [el('div', { class: 'empty' }, 'Nada por aquí.')]));
   // Al ver la pestaña de logros, los nuevos dejan de serlo (pero siguen marcados mientras estés aquí).
   if (st.unseen.length) chrome.storage.local.set({ unseen: [] });
 }
@@ -579,13 +579,13 @@ async function updateSettings(patch) {
 function renderSettings() {
   const u = st.updateStatus;
   const kv = (k, v) => [el('dt', {}, k), el('dd', {}, v)];
-  $('upd-info').replaceChildren(
+  fill($('upd-info'), 
     ...kv('Versión instalada', chrome.runtime.getManifest().version),
     ...kv('Última publicada', REMOTE_ENABLED ? u?.published || 'sin comprobar' : 'sin repositorio configurado'),
     ...kv('Catálogo', `v${st.catalog.catalogVersion} · ${st.catalog.source === 'remote' ? 'descargado de GitHub' : 'el que trae la extensión'} · ${st.catalog.games.length} juegos, ${st.catalog.achievements.length} logros`),
     ...kv('Última comprobación', u?.checkedAt ? `${fmtAgo(u.checkedAt)}, ${new Date(u.checkedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : 'nunca'),
   );
-  $('upd-help').replaceChildren(
+  fill($('upd-help'), 
     REMOTE_ENABLED
       ? el('span', {}, 'El catálogo (juegos y logros) se descarga solo cada hora. El código se actualiza solo si tienes activado el script de actualización automática; si no, ', el('a', { href: repoUrl(), target: '_blank', rel: 'noopener' }, 'descarga la última versión'), ' en la misma carpeta y la extensión se recargará sola. Tus horas y logros no se pierden.')
       : `Para recibir actualizaciones, pon tu usuario de GitHub en config.js (ahora: ${REPO.owner}). Mientras tanto se usa el catálogo que trae la extensión.`,
@@ -598,7 +598,7 @@ function renderSettings() {
   $('sysnotif').checked = !!st.settings.systemNotifications;
   for (const id of ['toast-page', 'sound', 'sysnotif']) $(id).disabled = !st.settings.notifications;
   const disabled = new Set(st.settings.disabled);
-  $('glist').replaceChildren(
+  fill($('glist'), 
     ...allGames(st.catalog, st.settings).map((g) => {
       const id = `g-${g.id}`;
       return el(
