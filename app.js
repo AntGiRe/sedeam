@@ -1028,17 +1028,23 @@ function renderAccount() {
   if (!CLOUD_ENABLED) return;
   const acc = st.account;
   if (!acc) {
+    box.className = 'card account out';
     fill(
       box,
-      el('h3', {}, 'Cuenta'),
       el(
         'div',
         { class: 'pitch' },
-        el('span', { class: 'big-e', 'aria-hidden': 'true' }, '☁️'),
-        el('div', {}, el('b', {}, 'Tu progreso en todos tus PCs'), el('p', { class: 'help', style: 'margin:2px 0 0' }, 'Horas, logros, temporadas y perfil, guardados en la nube. Sin cuenta, todo sigue funcionando solo en este PC.')),
+        el('div', { class: 'cloud-art', 'aria-hidden': 'true' }, '☁️'),
+        el(
+          'div',
+          {},
+          el('b', {}, 'Lleva tu progreso a todos tus PCs'),
+          el('p', {}, 'Sin cuenta, todo sigue funcionando solo en este PC.'),
+          el('ul', { class: 'perks' }, ['🏆 Logros a salvo', '💻 Varios PCs, un perfil', '🔒 Solo tú ves tus datos'].map((x) => el('li', {}, x))),
+        ),
         el('button', { class: 'btn-google', onclick: doSignIn }, el('span', { class: 'g', 'aria-hidden': 'true' }, 'G'), 'Entrar con Google'),
       ),
-      accountMsg ? el('p', { class: 'help', style: 'color:var(--danger)' }, accountMsg) : null,
+      accountMsg ? el('p', { class: 'help', style: 'color:var(--danger);margin-top:12px' }, accountMsg) : null,
     );
     return;
   }
@@ -1046,26 +1052,27 @@ function renderAccount() {
   const status = c.status;
   const devices = c.devices || [];
   const label = acc.name || acc.email;
+  box.className = 'card account';
+  const avatar = el('div', { class: 'avatar', 'aria-hidden': 'true' }, me.profile.avatar, el('span', { class: 'lvl' }, me.lv.level));
+  paintAvatar(avatar, me.profile, me.lv.level);
+  const friendly = (e) => (/fetch|network|internet/i.test(e) ? 'Sin conexión: se reintentará sola' : /sesión|jwt|token/i.test(e) ? 'La sesión ha caducado: vuelve a entrar' : e);
+  const when = (ts) => (fmtAgo(ts) === 'Hoy' ? `a las ${new Date(ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : fmtAgo(ts).toLowerCase());
   fill(
     box,
-    el('h3', {}, 'Cuenta'),
     el(
       'div',
       { class: 'acc-head' },
-      el('div', { class: 'initial', 'aria-hidden': 'true' }, (label || '?').charAt(0).toUpperCase()),
+      avatar,
       el(
         'div',
         { class: 'who' },
         el('b', {}, label),
         acc.name ? el('small', {}, acc.email) : null,
-        el(
-          'div',
-          { class: `sync-state${status?.error ? ' err' : ''}` },
-          status?.error ? `⚠️ No se ha podido sincronizar: ${status.error}` : status?.at ? `☁️ Sincronizado ${fmtAgo(status.at).toLowerCase() === 'hoy' ? `a las ${new Date(status.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : fmtAgo(status.at).toLowerCase()}` : '☁️ Sincronizando por primera vez…',
-        ),
+        el('div', {}, el('span', { class: `sync-pill${status?.error ? ' err' : status?.at ? '' : ' wait'}` }, status?.error ? friendly(status.error) : status?.at ? `Sincronizado ${when(status.at)}` : 'Sincronizando por primera vez…')),
       ),
-      el('button', { onclick: syncNow }, 'Sincronizar ahora'),
+      el('button', { onclick: syncNow }, '↻ Sincronizar'),
     ),
+    devices.length ? el('div', { class: 'devs-title' }, `Tus PCs (${devices.length})`) : null,
     devices.length
       ? el(
           'div',
@@ -1074,8 +1081,8 @@ function renderAccount() {
             const me = d.id === c.deviceId;
             return el(
               'div',
-              { class: 'dev' },
-              el('span', { 'aria-hidden': 'true' }, '💻'),
+              { class: `dev${me ? ' me' : ''}` },
+              el('span', { class: 'ico', 'aria-hidden': 'true' }, me ? '🖥️' : '💻'),
               el('div', {}, el('span', {}, d.name, me ? el('span', { class: 'me-tag' }, 'ESTE PC') : null), el('small', {}, d.last_sync_at ? `Última sincronización: ${fmtAgo(Date.parse(d.last_sync_at))}` : 'Aún sin sincronizar')),
               me
                 ? el('button', { class: 'ghost', onclick: () => renameDevice(d) }, 'Renombrar')
@@ -1086,11 +1093,11 @@ function renderAccount() {
       : null,
     el(
       'div',
-      { class: 'actions' },
+      { class: 'acc-foot' },
       el('button', { onclick: doSignOut }, 'Cerrar sesión'),
       el('button', { class: 'ghost danger', onclick: doDeleteAccount }, 'Borrar mi cuenta'),
     ),
-    accountMsg ? el('p', { class: 'help' }, accountMsg) : null,
+    accountMsg ? el('p', { class: 'help', style: 'margin-top:10px' }, accountMsg) : null,
   );
 }
 

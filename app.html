@@ -241,24 +241,41 @@
     .about h3 { margin-bottom: 2px; }
     .about .help { margin: 0; }
     .account .acc-head { display: flex; align-items: center; gap: 14px; }
-    .account .initial { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 20px; color: #fff; background: linear-gradient(135deg, #2a78d6, #6250d6); flex: none; }
+    .account .acc-head .avatar { width: 52px; height: 52px; font-size: 28px; border-radius: 10px; }
+    .account .acc-head .avatar .lvl { display: none; }
     .account .who { flex: 1; min-width: 0; }
-    .account .who b { display: block; }
+    .account .who b { display: block; font-size: 15px; }
     .account .who small { color: var(--muted); }
-    .account .sync-state { font-size: 12px; margin-top: 2px; }
-    .account .sync-state.err { color: var(--danger); }
-    .account .devs { display: grid; gap: 6px; margin: 14px 0; }
-    .account .dev { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); }
+    .sync-pill { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; padding: 3px 10px 3px 8px; border-radius: 999px; font-size: 12px;
+      background: color-mix(in srgb, var(--playing) 14%, transparent); color: color-mix(in srgb, var(--playing) 80%, var(--text)); }
+    .sync-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--playing); box-shadow: 0 0 0 3px color-mix(in srgb, var(--playing) 25%, transparent); }
+    .sync-pill.err { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+    .sync-pill.err::before { background: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 25%, transparent); }
+    .sync-pill.wait { background: var(--surface-2); color: var(--text-2); }
+    .sync-pill.wait::before { background: var(--muted); box-shadow: none; }
+    .account .devs { display: grid; gap: 6px; margin: 16px 0 14px; }
+    .account .devs-title { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-top: 16px; }
+    .account .dev { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); }
+    .account .dev .ico { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; font-size: 18px; background: var(--surface-3); }
+    .account .dev.me .ico { background: color-mix(in srgb, var(--accent) 22%, var(--surface-3)); }
     .account .dev small { display: block; color: var(--muted); font-size: 11.5px; }
-    .account .dev .me-tag { font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--accent); margin-left: 6px; }
-    .account .pitch { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-    .account .pitch > div { flex: 1; min-width: 220px; }
-    .account .pitch .big-e { font-size: 34px; }
+    .account .dev .me-tag { font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--accent); margin-left: 8px; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+    .account .acc-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid var(--border); }
+    .account.out { background: radial-gradient(90% 140% at 100% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%), var(--surface); }
+    .account .pitch { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; }
+    .account .cloud-art { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; font-size: 34px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 45%, #0a0f15), #0a0f15); box-shadow: inset 0 0 0 1px var(--border-strong); }
+    .account .pitch b { display: block; font-size: 16px; }
+    .account .pitch p { margin: 3px 0 8px; color: var(--text-2); font-size: 13px; }
+    .account .perks { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .account .perks li { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); }
+    @media (max-width: 640px) { .account .pitch { grid-template-columns: 1fr; } }
     .btn-google { background: #fff; color: #1f1f1f; border: 1px solid #dadce0; font-weight: 600; padding: 9px 16px; }
     .btn-google:hover { background: #f5f7fa; }
     .btn-google .g { font-weight: 900; background: conic-gradient(from -45deg, #ea4335 0 25%, #4285f4 0 50%, #34a853 0 75%, #fbbc05 0); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 16px; }
-    .pf-hero .cloud-link { color: rgba(255,255,255,.75); font-size: 12px; text-decoration: none; margin-left: 10px; }
-    .pf-hero .cloud-link:hover { color: #fff; text-decoration: underline; }
+    .pf-hero .cloud-link { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; padding: 3px 10px; border-radius: 999px; font-size: 12px; text-decoration: none;
+      color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16); }
+    .pf-hero .cloud-link:hover { background: rgba(255,255,255,.2); }
     .stat-tiles { margin-bottom: 16px; }
     .stat-tiles .tile { background: var(--surface); }
 

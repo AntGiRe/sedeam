@@ -26,6 +26,14 @@ function render() {
   const live = state.live && byId[state.live.game];
 
   $('ver').textContent = `v${chrome.runtime.getManifest().version}`;
+  // Nube: solo si hay cuenta (sin cuenta no se insiste).
+  $('cloud').hidden = !state.account;
+  if (state.account) {
+    const st = state.cloud?.status;
+    $('cloud').classList.toggle('err', !!st?.error);
+    $('cloud').textContent = st?.error ? 'Sin sincronizar' : `Nube · ${Math.max(1, (state.cloud?.devices || []).length)} PC${(state.cloud?.devices || []).length > 1 ? 's' : ''}`;
+    $('cloud').title = st?.error ? `No se ha podido sincronizar: ${st.error}` : st?.at ? `Sincronizado a las ${new Date(st.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : 'Sincronizando…';
+  }
   // El Wrapped del año (desde la segunda semana de diciembre hasta enero) y, los 7 primeros días de
   // cada mes, el del mes anterior.
   const nowD = new Date(now);

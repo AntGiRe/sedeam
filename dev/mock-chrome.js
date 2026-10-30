@@ -45,6 +45,19 @@
     achievements: { bienvenida: now - 290 * 864e5, clave: now - 289 * 864e5, habitual: now - 280 * 864e5, centenario: now - 220 * 864e5, maraton: now - 150 * 864e5, dia20: now - 9 * 864e5, doble: now - 288 * 864e5, racha5: now - 270 * 864e5, noctambulo: now - 40 * 864e5, notificado: now - 200 * 864e5, coleccionista: now - 120 * 864e5 },
   };
   const local = { updateStatus: { running: '0.2.0', published: '0.3.0', checkedAt: now - 20 * 60000 }, data, settings: { idleMinutes: 3, disabled: ['sepe'], customGames: [{ id: 'c_atc', name: 'ATC Canarias', emoji: '🌴', domains: ['gobiernodecanarias.org'] }], notifications: true, profile: { name: 'Antonio', avatar: 'avatar-buho', theme: new URLSearchParams(location.search).get('tema') || 'theme-sede', frame: 'frame-plata', title: 'ach:dia20', showcase: ['dia20', 'noctambulo', 'maraton'] } } };
+  // ?cuenta simula una sesión iniciada con dos PCs sincronizados.
+  if (location.search.includes('cuenta')) {
+    local.cloudSession = { access_token: 'x', refresh_token: 'y', expires_at: now / 1000 + 3600, user: { id: 'u1', email: 'antonio@ejemplo.com', name: 'Antonio Gil' } };
+    local.cloud = {
+      deviceId: 'pc1', deviceName: 'PC oficina', sent: {}, lastPull: {},
+      others: { rows: {}, extras: {}, records: {} },
+      devices: [
+        { id: 'pc1', name: 'PC oficina', last_sync_at: new Date(now - 2 * 60000).toISOString() },
+        { id: 'pc2', name: 'Portátil casa', last_sync_at: new Date(now - 26 * 3600000).toISOString() },
+      ],
+      status: location.search.includes('error') ? { at: now - 60000, error: 'Failed to fetch' } : { at: now - 2 * 60000, error: null },
+    };
+  }
   // ?vacio simula una instalación recién hecha, sin horas ni logros.
   if (location.search.includes('vacio')) for (const k of Object.keys(local)) delete local[k];
   const session = location.search.includes('vacio') ? {} : { live: { game: 'aeat', start: now - 20000 } };

@@ -9,6 +9,11 @@
     body { width: 390px; background: var(--page); }
     .bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--chrome); border-bottom: 1px solid var(--border); }
     .bar .ver { font-size: 11px; color: var(--muted); }
+    .bar-right { display: flex; align-items: center; gap: 10px; }
+    .cloud-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; text-decoration: none; color: var(--text-2); padding: 2px 8px 2px 7px; border-radius: 999px; background: var(--surface-2); }
+    .cloud-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--playing); }
+    .cloud-chip.err::before { background: var(--danger); }
+    .cloud-chip:hover { color: var(--text); }
     .update { display: block; padding: 8px 14px; background: rgba(90, 169, 230, .12); color: var(--accent); font-size: 12px; text-decoration: none; border-bottom: 1px solid var(--border); }
     .update[hidden] { display: none; }
     .wrapped-link { background: linear-gradient(90deg, rgba(213,81,129,.22), rgba(98,80,214,.18)); color: #fff; font-weight: 600; }
@@ -91,7 +96,7 @@
 <body>
   <div class="bar">
     <a class="wordmark" href="app.html#biblioteca" target="_blank"><img src="icons/icon32.png" alt=""><span>SEDEAM</span></a>
-    <span class="ver" id="ver"></span>
+    <span class="bar-right"><a class="cloud-chip" id="cloud" href="app.html#ajustes" target="_blank" hidden></a><span class="ver" id="ver"></span></span>
   </div>
   <a class="update wrapped-link" id="wrapped-link" href="wrapped.html" target="_blank" hidden></a>
   <a class="update" id="update" href="https://github.com/AntGiRe/sedeam/releases/latest" target="_blank" hidden></a>
