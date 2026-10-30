@@ -15,10 +15,12 @@ import { rewardContext, unlockedIds } from './lib/rewards.js';
 import { enabledGames, matchGame } from './lib/games.js';
 import { getCatalog, refreshRemoteCatalog } from './lib/catalog.js';
 import { checkForUpdates } from './lib/updates.js';
-import { loadData, saveData, loadSettings } from './lib/store.js';
+import { loadData, saveData, loadSettings, saveSettings } from './lib/store.js';
 import { showToasts } from './lib/toast.js';
 import { LOADING, addLoading, isLoadingUrl, outageKind, outageTarget, recordOutage, recordTabs } from './lib/extras.js';
-import { BRAND } from './config.js';
+import { BRAND, CLOUD_ENABLED } from './config.js';
+import { applyPulled, buildUploads, emptyCloud, mergeData, profileAction } from './lib/cloud-core.js';
+import { api, getSession, selectAll, upsert } from './lib/cloud.js';
 
 const TICK = 'tick';
 const UPDATES = 'updates';
@@ -74,15 +76,18 @@ function uncommitAny(data, game, start, end) {
 function tick(reason, idleState) {
   return serial(async () => {
     const now = Date.now();
-    const [settings, catalog, data] = await Promise.all([loadSettings(), getCatalog(), loadData()]);
+    const [settings, catalog, data, { cloud }] = await Promise.all([loadSettings(), getCatalog(), loadData(), chrome.storage.local.get('cloud')]);
+    // Lo que cuenta para niveles, temporada y logros es la suma de todos tus PCs (si hay cuenta).
+    const all = () => mergeData(data, cloud);
     const idleMs = settings.idleMinutes * MIN;
     const { live, recent = [] } = await chrome.storage.session.get(['live', 'recent']);
-    const levelBefore = levelOf(data, catalog.levels).level;
+    const before = all();
+    const levelBefore = levelOf(before, catalog.levels).level;
     const todayBefore = dayTotal(data, dayKey(now));
     const xpItems = [];
-    const rewardsBefore = unlockedIds(catalog, rewardContext(data, catalog));
+    const rewardsBefore = unlockedIds(catalog, rewardContext(before, catalog));
     const season = catalog.seasons ? seasonAt(catalog.seasons, new Date(now)) : null;
-    const tierBefore = season ? seasonProgress(data, catalog.seasons, season).tier : 0;
+    const tierBefore = season ? seasonProgress(before, catalog.seasons, season).tier : 0;
 
     // Tramos recientes: hacen falta para descontar el rato sin actividad cuando salta el aviso de inactividad.
     let segs = recent.filter((s) => s.end > now - idleMs - 2 * MIN);
@@ -117,21 +122,23 @@ function tick(reason, idleState) {
     if (recordTabs(data, await tabCounts(catalog, settings), now)) changed = true;
 
     // Retos antes que logros: completar un reto puede desbloquear un logro en el mismo apunte.
-    const doneChallenges = resolveChallenges(data, catalog.challenges || [], new Date(now));
+    let view = all();
+    const doneChallenges = resolveChallenges(view, catalog.challenges || [], new Date(now));
     // También se evalúa sin cambios de tiempo: un catálogo nuevo puede traer logros que ya se cumplen.
-    const fresh = evaluate(data, catalog.achievements, now);
+    const fresh = evaluate(view, catalog.achievements, now);
     const pause = await checkBreak(game, settings, now);
     if (changed || fresh.length || doneChallenges.length) {
       await saveData(data);
       const items = doneChallenges.map((c) => ({ id: `reto-${c.week.id}-${c.id}`, kind: 'reward', emoji: c.emoji, label: '¡Reto semanal completado!', name: c.name, desc: `+${fmtXp(c.xp * 60)}` }));
       items.push(...fresh.map((a) => ({ id: `logro-${a.id}`, kind: 'ach', emoji: a.emoji, label: '¡Logro desbloqueado!', name: a.name, desc: a.desc })));
-      const lv = levelOf(data, catalog.levels);
+      view = all();
+      const lv = levelOf(view, catalog.levels);
       if (lv.level > levelBefore) items.push({ id: `nivel-${lv.level}`, kind: 'level', emoji: '⬆️', label: `¡Nivel ${lv.level}!`, name: lv.title, desc: 'Has subido de rango. Sigue así (o no).' });
       if (season) {
-        const tier = seasonProgress(data, catalog.seasons, season).tier;
+        const tier = seasonProgress(view, catalog.seasons, season).tier;
         if (tier > tierBefore) items.push({ id: `temporada-${season.id}-${tier}`, kind: 'level', emoji: season.emoji, label: `Temporada ${season.label} · nivel ${tier}`, name: tier >= catalog.seasons.tiers ? '¡Pase completado!' : `Nivel ${tier} de ${catalog.seasons.tiers}`, desc: season.name });
       }
-      const rewardsAfter = unlockedIds(catalog, rewardContext(data, catalog));
+      const rewardsAfter = unlockedIds(catalog, rewardContext(view, catalog));
       for (const r of catalog.rewards || []) {
         if (rewardsAfter.has(r.id) && !rewardsBefore.has(r.id)) {
           items.push({ id: `recompensa-${r.id}`, kind: 'reward', emoji: r.type === 'avatar' ? r.emoji : { theme: '🎨', frame: '🖼️', title: '🏷️' }[r.type], label: '¡Recompensa desbloqueada!', name: r.name, desc: 'Equípala en tu Perfil.' });
@@ -151,7 +158,7 @@ function tick(reason, idleState) {
     if (drops && live && live.game !== LOADING) {
       const todayMs = dayTotal(data, dayKey(now));
       const hourHit = Math.floor(todayMs / (60 * MIN)) > Math.floor(todayBefore / (60 * MIN));
-      const sp = season ? seasonProgress(data, catalog.seasons, season) : null;
+      const sp = season ? seasonProgress(all(), catalog.seasons, season) : null;
       const gameName = enabledGames(catalog, settings).find((g) => g.id === live.game)?.name || '';
       xpItems.push({
         kind: 'xp',
@@ -348,7 +355,8 @@ function onOutage(details) {
     if (now - (lastOutage.get(key) || 0) < 20_000) return;
     lastOutage.set(key, now);
     const totals = recordOutage(data, game.id, now);
-    const fresh = evaluate(data, catalog.achievements, now);
+    const { cloud } = await chrome.storage.local.get('cloud');
+    const fresh = evaluate(mergeData(data, cloud), catalog.achievements, now);
     await saveData(data);
     const items = [];
     // Aviso de la caída solo la primera vez del día en cada sede, para no echar sal en la herida.
@@ -367,6 +375,104 @@ const PAGE_FILTER = { urls: chrome.runtime.getManifest().host_permissions || [],
 chrome.webRequest.onCompleted.addListener(onOutage, PAGE_FILTER);
 chrome.webRequest.onErrorOccurred.addListener(onOutage, PAGE_FILTER);
 
+// ---------- Sincronización entre PCs ----------
+// 1) Foto de los datos (en la cola, rápido). 2) Subir lo cambiado y bajar lo nuevo (fuera de la cola:
+// la red no bloquea el contador). 3) Aplicar lo bajado sobre los datos frescos (en la cola).
+
+const SYNC = 'sync';
+let syncing = null;
+
+function deviceLabel() {
+  const p = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+  return p.includes('mac') ? 'Chrome en Mac' : p.includes('win') ? 'Chrome en Windows' : p.includes('linux') ? 'Chrome en Linux' : 'Chrome';
+}
+
+function cloudSync() {
+  if (!CLOUD_ENABLED) return Promise.resolve();
+  syncing ||= runSync().finally(() => (syncing = null));
+  return syncing;
+}
+
+async function runSync() {
+  const session = await getSession();
+  if (!session) return;
+  let snap;
+  await serial(async () => {
+    const [data, settings, { cloud }] = await Promise.all([loadData(), loadSettings(), chrome.storage.local.get('cloud')]);
+    snap = { data, settings, cloud: { ...emptyCloud(), ...(cloud || {}) } };
+  });
+  const cloud = snap.cloud;
+  const uid = session.user.id;
+  try {
+    // Este PC, dado de alta una vez.
+    if (!cloud.deviceId) {
+      const [dev] = await api('/devices', { method: 'POST', body: { user_id: uid, name: deviceLabel() }, prefer: 'return=representation' });
+      cloud.deviceId = dev.id;
+      cloud.deviceName = dev.name;
+      cloud.sent = {};
+    }
+    const devices = await api('/devices?select=id,name,created_at,last_sync_at&order=created_at.asc');
+    if (!devices.some((d) => d.id === cloud.deviceId)) {
+      // Lo han quitado desde otro PC: en la próxima vuelta se vuelve a dar de alta y sube todo.
+      await serial(() => chrome.storage.local.set({ cloud: { ...emptyCloud(), status: { at: Date.now(), error: null } } }));
+      return;
+    }
+    cloud.deviceName = devices.find((d) => d.id === cloud.deviceId).name;
+
+    // Subir
+    const up = buildUploads(snap.data, cloud, cloud.deviceId, uid);
+    await upsert('day_stats', up.dayStats, 'user_id,device_id,day,game');
+    await upsert('day_extras', up.extras, 'user_id,device_id,day');
+    await upsert('device_records', up.records, 'user_id,device_id');
+    await upsert('achievements', up.achievements, 'user_id,achievement_id');
+    await upsert('challenges', up.challenges, 'user_id,week,challenge_id', { ignore: true });
+    await upsert('daily_bonus', up.bonus, 'user_id,day', { ignore: true });
+    Object.assign(cloud.sent, up.sent);
+
+    // Perfil: gana el cambio más reciente
+    const [remoteProfile] = await api('/profiles?select=display_name,profile,updated_at');
+    const action = profileAction(snap.settings, remoteProfile, cloud);
+    if (action === 'push') {
+      const profile = snap.settings.profile || {};
+      await upsert('profiles', [{ user_id: uid, display_name: (profile.name || '').slice(0, 30) || null, profile }], 'user_id');
+      cloud.sent.profile = JSON.stringify(profile);
+    }
+
+    // Bajar (lo de los otros PCs, solo lo cambiado desde la última vez)
+    const me = cloud.deviceId;
+    const since = (k) => encodeURIComponent(cloud.lastPull[k] || '1970-01-01T00:00:00Z');
+    const rows = await selectAll(`/day_stats?select=device_id,day,game,ms,slots,updated_at&device_id=neq.${me}&updated_at=gt.${since('days')}&order=updated_at.asc`);
+    const extras = await selectAll(`/day_extras?select=device_id,day,loading_ms,outages,updated_at&device_id=neq.${me}&updated_at=gt.${since('extras')}&order=updated_at.asc`);
+    const records = await api(`/device_records?select=device_id,records&device_id=neq.${me}`);
+    const achievements = await selectAll('/achievements?select=achievement_id,unlocked_at');
+    const challenges = await selectAll('/challenges?select=week,challenge_id,completed_at,xp');
+    const bonus = await selectAll('/daily_bonus?select=day,xp');
+    if (rows.length) cloud.lastPull.days = rows[rows.length - 1].updated_at;
+    if (extras.length) cloud.lastPull.extras = extras[extras.length - 1].updated_at;
+
+    await api(`/devices?id=eq.${me}`, { method: 'PATCH', body: { last_sync_at: new Date().toISOString() }, prefer: 'return=minimal' });
+    cloud.status = { at: Date.now(), error: null };
+
+    // Aplicar sobre los datos de ahora (pueden haber cambiado mientras íbamos a la red)
+    await serial(async () => {
+      const [data, settings] = await Promise.all([loadData(), loadSettings()]);
+      const { personChanged } = applyPulled(data, cloud, { devices, rows, extras, records, achievements, challenges, bonus });
+      if (personChanged) await saveData(data);
+      if (action === 'pull') {
+        await saveSettings({ ...settings, profile: remoteProfile.profile || {}, profileUpdatedAt: Date.parse(remoteProfile.updated_at) });
+        cloud.sent.profile = JSON.stringify(remoteProfile.profile || {});
+      }
+      await chrome.storage.local.set({ cloud });
+    });
+  } catch (e) {
+    console.warn(`[${BRAND.name}] sincronización`, e.message);
+    await serial(async () => {
+      const { cloud: now } = await chrome.storage.local.get('cloud');
+      await chrome.storage.local.set({ cloud: { ...emptyCloud(), ...(now || cloud), status: { at: Date.now(), error: e.message } } });
+    });
+  }
+}
+
 async function applyIdleInterval() {
   const settings = await loadSettings();
   // El intervalo no sobrevive a que el service worker se duerma: se fija cada vez que arranca.
@@ -377,6 +483,7 @@ async function setup() {
   await applyIdleInterval();
   if (!(await chrome.alarms.get(TICK))) await chrome.alarms.create(TICK, { periodInMinutes: 1 });
   if (!(await chrome.alarms.get(UPDATES))) await chrome.alarms.create(UPDATES, { periodInMinutes: 60, delayInMinutes: 1 });
+  if (!(await chrome.alarms.get(SYNC))) await chrome.alarms.create(SYNC, { periodInMinutes: 10, delayInMinutes: 0.5 });
   tick('startup');
 }
 
@@ -394,6 +501,7 @@ chrome.runtime.onStartup.addListener(() => setup().then(runUpdates));
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === TICK) tick('alarm');
   if (a.name === UPDATES) runUpdates();
+  if (a.name === SYNC) cloudSync();
 });
 chrome.tabs.onActivated.addListener(() => tick('tab'));
 chrome.tabs.onUpdated.addListener((_id, info, tab) => {
@@ -434,6 +542,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
       else await announce(items, { ...settings, notifications: true });
       reply(true);
     });
+    return true;
+  }
+  if (msg?.type === 'cloud-sync') {
+    cloudSync().then(() => reply(true));
     return true;
   }
   if (msg?.type === 'check-updates') {

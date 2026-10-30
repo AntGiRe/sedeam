@@ -18,3 +18,12 @@ export const REMOTE_ENABLED = REPO.owner !== 'TU_USUARIO';
 export const rawUrl = (path) => `https://raw.githubusercontent.com/${REPO.owner}/${REPO.name}/${REPO.branch}/${path}`;
 export const repoUrl = () => `https://github.com/${REPO.owner}/${REPO.name}`;
 export const releasesUrl = () => `${repoUrl()}/releases/latest`;
+
+// Cuentas y sincronización entre PCs (Supabase). La clave es la pública ("publishable"): está hecha
+// para ir dentro de la app. Lo que protege los datos son los permisos por fila de la base de datos
+// (supabase/migrations). La clave secreta NUNCA va aquí.
+export const SUPABASE = {
+  url: 'https://jhxzefcwehzfofcfudom.supabase.co',
+  key: 'sb_publishable_FUZUcOjA6dGk8Ruep6QY5w_WxDUpOpk',
+};
+export const CLOUD_ENABLED = !!(SUPABASE.url && SUPABASE.key);

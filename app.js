@@ -12,7 +12,8 @@ import { allGames } from './lib/games.js';
 import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
 import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, levelColor, loadAll, paintAvatar, profileFor, shortcutsOf, updateAvailable, withLive } from './lib/view.js';
 import { showToasts } from './lib/toast.js';
-import { BRAND, REMOTE_ENABLED } from './config.js';
+import { api, deleteMyAccount, signIn, signOut } from './lib/cloud.js';
+import { BRAND, CLOUD_ENABLED, REMOTE_ENABLED } from './config.js';
 
 const $ = (id) => document.getElementById(id);
 const SVG = 'http://www.w3.org/2000/svg';
@@ -788,7 +789,7 @@ function renderChallenges() {
 // ---------- Perfil ----------
 
 async function updateProfile(patch) {
-  await updateSettings({ profile: { ...(st.settings.profile || {}), ...patch } });
+  await updateSettings({ profile: { ...(st.settings.profile || {}), ...patch }, profileUpdatedAt: Date.now() });
 }
 
 const THEME_SW = {
@@ -821,7 +822,16 @@ function renderProfilePage() {
       { style: 'min-width:0' },
       el('div', { class: 'pname' }, profile.name),
       el('div', { class: 'ptitle' }, profile.titleText),
-      el('div', { class: 'pstatus' }, live ? el('span', { class: 'status-playing' }, `● Jugando a ${live.name}`) : el('span', { style: 'color:rgba(255,255,255,.65)' }, firstPlayed ? `En ${BRAND.name} desde ${fmtDate(firstPlayed, { month: 'long', year: 'numeric' })}` : `Recién llegado a ${BRAND.name}`)),
+      el(
+        'div',
+        { class: 'pstatus' },
+        live ? el('span', { class: 'status-playing' }, `● Jugando a ${live.name}`) : el('span', { style: 'color:rgba(255,255,255,.65)' }, firstPlayed ? `En ${BRAND.name} desde ${fmtDate(firstPlayed, { month: 'long', year: 'numeric' })}` : `Recién llegado a ${BRAND.name}`),
+        CLOUD_ENABLED
+          ? st.account
+            ? el('a', { class: 'cloud-link', href: '#ajustes' }, `☁️ Sincronizado en ${Math.max(1, (st.cloud?.devices || []).length)} ${(st.cloud?.devices || []).length > 1 ? 'PCs' : 'PC'}`)
+            : el('a', { class: 'cloud-link', href: '#ajustes' }, '☁️ Guarda tu perfil en la nube →')
+          : null,
+      ),
       el('button', { class: 'edit', onclick: openEdit }, '✏️ Editar perfil'),
     ),
     el(
@@ -1008,7 +1018,133 @@ async function updateSettings(patch) {
   await saveSettings(st.settings);
 }
 
+// ---------- Cuenta (nube) ----------
+
+let accountMsg = '';
+
+function renderAccount() {
+  const box = $('account');
+  box.hidden = !CLOUD_ENABLED;
+  if (!CLOUD_ENABLED) return;
+  const acc = st.account;
+  if (!acc) {
+    fill(
+      box,
+      el('h3', {}, 'Cuenta'),
+      el(
+        'div',
+        { class: 'pitch' },
+        el('span', { class: 'big-e', 'aria-hidden': 'true' }, '☁️'),
+        el('div', {}, el('b', {}, 'Tu progreso en todos tus PCs'), el('p', { class: 'help', style: 'margin:2px 0 0' }, 'Horas, logros, temporadas y perfil, guardados en la nube. Sin cuenta, todo sigue funcionando solo en este PC.')),
+        el('button', { class: 'btn-google', onclick: doSignIn }, el('span', { class: 'g', 'aria-hidden': 'true' }, 'G'), 'Entrar con Google'),
+      ),
+      accountMsg ? el('p', { class: 'help', style: 'color:var(--danger)' }, accountMsg) : null,
+    );
+    return;
+  }
+  const c = st.cloud || {};
+  const status = c.status;
+  const devices = c.devices || [];
+  const label = acc.name || acc.email;
+  fill(
+    box,
+    el('h3', {}, 'Cuenta'),
+    el(
+      'div',
+      { class: 'acc-head' },
+      el('div', { class: 'initial', 'aria-hidden': 'true' }, (label || '?').charAt(0).toUpperCase()),
+      el(
+        'div',
+        { class: 'who' },
+        el('b', {}, label),
+        acc.name ? el('small', {}, acc.email) : null,
+        el(
+          'div',
+          { class: `sync-state${status?.error ? ' err' : ''}` },
+          status?.error ? `⚠️ No se ha podido sincronizar: ${status.error}` : status?.at ? `☁️ Sincronizado ${fmtAgo(status.at).toLowerCase() === 'hoy' ? `a las ${new Date(status.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : fmtAgo(status.at).toLowerCase()}` : '☁️ Sincronizando por primera vez…',
+        ),
+      ),
+      el('button', { onclick: syncNow }, 'Sincronizar ahora'),
+    ),
+    devices.length
+      ? el(
+          'div',
+          { class: 'devs' },
+          devices.map((d) => {
+            const me = d.id === c.deviceId;
+            return el(
+              'div',
+              { class: 'dev' },
+              el('span', { 'aria-hidden': 'true' }, '💻'),
+              el('div', {}, el('span', {}, d.name, me ? el('span', { class: 'me-tag' }, 'ESTE PC') : null), el('small', {}, d.last_sync_at ? `Última sincronización: ${fmtAgo(Date.parse(d.last_sync_at))}` : 'Aún sin sincronizar')),
+              me
+                ? el('button', { class: 'ghost', onclick: () => renameDevice(d) }, 'Renombrar')
+                : el('button', { class: 'ghost danger', onclick: () => removeDevice(d) }, 'Quitar'),
+            );
+          }),
+        )
+      : null,
+    el(
+      'div',
+      { class: 'actions' },
+      el('button', { onclick: doSignOut }, 'Cerrar sesión'),
+      el('button', { class: 'ghost danger', onclick: doDeleteAccount }, 'Borrar mi cuenta'),
+    ),
+    accountMsg ? el('p', { class: 'help' }, accountMsg) : null,
+  );
+}
+
+async function withMsg(fn, okMsg) {
+  try {
+    accountMsg = '';
+    await fn();
+    accountMsg = okMsg || '';
+  } catch (e) {
+    accountMsg = /did not approve|canceled|cancelled|closed/i.test(e.message) ? 'Has cerrado la ventana de Google antes de terminar.' : `Algo ha fallado: ${e.message}`;
+  }
+  await refresh();
+}
+
+const doSignIn = () => withMsg(async () => {
+  await signIn();
+  await chrome.runtime.sendMessage({ type: 'cloud-sync' });
+}, 'Sesión iniciada. Tus datos ya están en la nube.');
+
+const syncNow = () => withMsg(() => chrome.runtime.sendMessage({ type: 'cloud-sync' }));
+
+const renameDevice = (d) => {
+  const name = prompt('Nombre de este PC (p. ej. «PC oficina»):', d.name);
+  if (!name || !name.trim()) return;
+  withMsg(async () => {
+    await api(`/devices?id=eq.${d.id}`, { method: 'PATCH', body: { name: name.trim().slice(0, 40) }, prefer: 'return=minimal' });
+    await chrome.runtime.sendMessage({ type: 'cloud-sync' });
+  });
+};
+
+const removeDevice = (d) => {
+  if (!confirm(`¿Quitar «${d.name}»? Se borrará de la nube todo lo que ese PC había subido.`)) return;
+  withMsg(async () => {
+    await api(`/devices?id=eq.${d.id}`, { method: 'DELETE', prefer: 'return=minimal' });
+    await chrome.runtime.sendMessage({ type: 'cloud-sync' });
+  }, `«${d.name}» quitado.`);
+};
+
+const doSignOut = () => {
+  if (!confirm('¿Cerrar sesión? Lo de este PC se queda aquí; lo de tus otros PCs dejará de verse hasta que vuelvas a entrar.')) return;
+  withMsg(signOut, 'Sesión cerrada.');
+};
+
+const doDeleteAccount = () => {
+  if (!confirm('¿Borrar tu cuenta? Se eliminará de la nube TODO lo tuyo (horas de todos tus PCs, logros, perfil). Lo guardado en este PC se queda.')) return;
+  if (!confirm('Última confirmación: esto no se puede deshacer.')) return;
+  withMsg(async () => {
+    await deleteMyAccount();
+    await signOut();
+  }, 'Cuenta borrada. Nada tuyo queda en la nube.');
+};
+
 function renderSettings() {
+  renderAccount();
   $('notif').checked = !!st.settings.notifications;
   $('sound').checked = !!st.settings.sound;
   $('sound').disabled = !st.settings.notifications;
@@ -1087,7 +1223,7 @@ function wireSettings() {
 
   const slug = BRAND.name.toLowerCase();
   $('exp-json').addEventListener('click', () =>
-    download(`${slug}-copia-${dayKey(Date.now())}.json`, JSON.stringify({ app: 'sedeam', exportedAt: new Date().toISOString(), data: st.data, settings: st.settings }, null, 2), 'application/json'),
+    download(`${slug}-copia-${dayKey(Date.now())}.json`, JSON.stringify({ app: 'sedeam', exportedAt: new Date().toISOString(), data: st.localData, settings: st.settings }, null, 2), 'application/json'),
   );
   $('imp').addEventListener('click', () => $('imp-file').click());
   $('imp-file').addEventListener('change', async (e) => {
@@ -1099,6 +1235,7 @@ function wireSettings() {
       // También acepta las copias de la versión anterior (Horas en Sede).
       if (!['sedeam', 'horas-en-sede'].includes(json.app) || typeof json.data?.days !== 'object') throw new Error('formato');
       if (!confirm('Esto sustituye tus datos actuales por los de la copia. ¿Seguir?')) return;
+      if (st.account && !confirm('Tienes la cuenta iniciada: lo restaurado se subirá como datos de ESTE PC. Si la copia viene de otro PC que también sincroniza, esas horas contarían dos veces. ¿Seguir?')) return;
       await chrome.storage.local.set({ data: json.data, settings: { ...DEFAULT_SETTINGS, ...json.settings } });
       $('data-msg').textContent = 'Copia restaurada.';
     } catch {
@@ -1188,7 +1325,7 @@ chrome.storage.onChanged.addListener((changes) => {
   if (toast && Date.now() - toast.at < 10_000 && document.visibilityState === 'visible') {
     showToasts(toast.items, { sound: st?.settings.sound, brand: BRAND.name });
   }
-  if (changes.data || changes.settings || changes.remoteCatalog || changes.updateStatus || changes.live) refresh();
+  if (changes.data || changes.settings || changes.remoteCatalog || changes.updateStatus || changes.live || changes.cloud || changes.cloudSession) refresh();
 });
 wireSettings();
 wireProfile();

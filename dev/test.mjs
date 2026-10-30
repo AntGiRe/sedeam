@@ -10,6 +10,7 @@ import { validateCatalog, pickCatalog } from '../lib/catalog.js';
 import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, seasonProgress, shiftToWorkday, daysUntil } from '../lib/calendar.js';
 import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
 import { parsePeriod, latestPeriods, computeWrapped, equivalence, yearUnlockDate, isYearUnlocked, featuredYear } from '../lib/wrapped.js';
+import { emptyCloud, mergeData, buildUploads, applyPulled, profileAction } from '../lib/cloud-core.js';
 import { totalXp, levelOf, grantDailyBonus, dropsCrossed, bonusXp } from '../lib/xp.js';
 import { weekOf, pickChallenges, challengeState, resolveChallenges } from '../lib/challenges.js';
 import { isLoadingUrl, addLoading, outageKind, outageTarget, recordOutage, recordTabs } from '../lib/extras.js';
@@ -413,6 +414,71 @@ test('XP: 1 por minuto, bonus diario, retos y píldoras', () => {
   assert.equal(dropsCrossed(14 * MIN, 15 * MIN), 1);
   assert.equal(dropsCrossed(15 * MIN, 29 * MIN), 0);
   assert.equal(dropsCrossed(10 * MIN, 46 * MIN), 3); // cruza los minutos 15, 30 y 45
+});
+
+test('nube: dos PCs se suman sin pisarse ni contarse dos veces', () => {
+  // PC1 (este) y PC2 (otro) el mismo día.
+  const pc1 = emptyData();
+  commitSegment(pc1, 'aeat', t('2026-10-29T09:00'), t('2026-10-29T11:00')); // 2 h
+  pc1.achievements.clave = t('2026-10-29T10:00');
+  const cloud = { ...emptyCloud(), deviceId: 'pc1' };
+  // Subida inicial: todo; la segunda vez, nada (ya está enviado).
+  let up = buildUploads(pc1, cloud, 'pc1', 'u1');
+  assert.equal(up.dayStats.length, 1);
+  assert.equal(up.dayStats[0].ms, 2 * HOUR);
+  assert.deepEqual(up.dayStats[0].slots, { 9: HOUR, 10: HOUR });
+  assert.equal(up.achievements.length, 1);
+  Object.assign(cloud.sent, up.sent);
+  up = buildUploads(pc1, cloud, 'pc1', 'u1');
+  assert.equal(up.dayStats.length + up.achievements.length + up.records.length, 0);
+  // Llegan los datos del PC2 (y una copia de lo nuestro, que se ignora).
+  applyPulled(pc1, cloud, {
+    devices: [{ id: 'pc1' }, { id: 'pc2' }],
+    rows: [
+      { device_id: 'pc2', day: '2026-10-29', game: 'aeat', ms: HOUR, slots: { 16: HOUR } },
+      { device_id: 'pc1', day: '2026-10-29', game: 'aeat', ms: 2 * HOUR, slots: {} },
+    ],
+    extras: [{ device_id: 'pc2', day: '2026-10-29', loading_ms: 5 * MIN, outages: { aeat: 1 } }],
+    records: [{ device_id: 'pc2', records: { bestRuns: { aeat: 3 * HOUR }, tabs: { all: { count: 9, ts: 1 }, byGame: {} } } }],
+    achievements: [{ achievement_id: 'clave', unlocked_at: '2026-10-28T10:00:00Z' }, { achievement_id: 'noctambulo', unlocked_at: '2026-10-27T23:30:00Z' }],
+    challenges: [{ week: '2026-S44', challenge_id: 'intensiva', completed_at: '2026-10-28T12:00:00Z', xp: 3 }],
+    bonus: [{ day: '2026-10-29', xp: 10 }],
+  });
+  const m = mergeData(pc1, cloud);
+  assert.equal(m.days['2026-10-29'].aeat, 3 * HOUR); // 2 h de aquí + 1 h del otro, no 5
+  assert.equal(m.hours.aeat[16], HOUR);
+  assert.equal(m.loading['2026-10-29'], 5 * MIN);
+  assert.equal(m.outages['2026-10-29'].aeat, 1);
+  assert.equal(m.bestRuns.aeat, 3 * HOUR);
+  assert.equal(m.tabs.all.count, 9);
+  assert.equal(pc1.days['2026-10-29'].aeat, 2 * HOUR); // lo local no se toca
+  // Logros: se queda la fecha más antigua y llegan los nuevos; el bonus diario ya no se repite.
+  assert.equal(pc1.achievements.clave, Date.parse('2026-10-28T10:00:00Z'));
+  assert.ok(pc1.achievements.noctambulo);
+  assert.equal(pc1.challenges['2026-S44'].intensiva.xp, 3);
+  assert.equal(grantDailyBonus(pc1, t('2026-10-29T12:00')), 0);
+  // Lo de la persona se comparte: un logro desbloqueado sobre la vista sumada queda en local.
+  evaluate(m, catalog.achievements, t('2026-10-29T12:00'));
+  assert.equal(m.achievements, pc1.achievements);
+  // Lo recibido no se vuelve a subir.
+  up = buildUploads(pc1, cloud, 'pc1', 'u1');
+  assert.ok(!up.achievements.some((a) => a.achievement_id === 'noctambulo' || a.achievement_id === 'clave'));
+  assert.equal(up.challenges.length, 0);
+  // Si quitan el PC2 desde otro sitio, desaparecen sus datos.
+  applyPulled(pc1, cloud, { devices: [{ id: 'pc1' }] });
+  assert.equal(mergeData(pc1, cloud).days['2026-10-29'].aeat, 2 * HOUR);
+  // Sin nube, mergeData devuelve los mismos datos.
+  assert.equal(mergeData(pc1, null), pc1);
+});
+
+test('nube: el perfil gana el cambio más reciente', () => {
+  const cloud = emptyCloud();
+  const remote = { profile: { name: 'Remoto' }, updated_at: '2026-10-29T10:00:00Z' };
+  assert.equal(profileAction({ profile: { name: 'Local' }, profileUpdatedAt: Date.parse('2026-10-29T09:00:00Z') }, remote, cloud), 'pull');
+  assert.equal(profileAction({ profile: { name: 'Local' }, profileUpdatedAt: Date.parse('2026-10-29T11:00:00Z') }, remote, cloud), 'push');
+  assert.equal(profileAction({ profile: { name: 'Local' } }, null, cloud), 'push');
+  cloud.sent.profile = JSON.stringify({ name: 'Remoto' });
+  assert.equal(profileAction({ profile: { name: 'Remoto' }, profileUpdatedAt: Date.parse('2026-10-29T10:00:00Z') }, remote, cloud), null);
 });
 
 console.log(`\n${ok} pruebas OK`);
