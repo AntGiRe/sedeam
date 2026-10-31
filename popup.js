@@ -80,7 +80,7 @@ function render() {
     $('season-tier').textContent = `Nv. ${sp.tier}/${catalog.seasons.tiers}`;
     $('season-bar').style.width = `${Math.round(sp.progress * 100)}%`;
     const week = weekOf(new Date(now));
-    const chs = pickChallenges(catalog.challenges || [], week.id);
+    const chs = pickChallenges(catalog.challenges || [], week.id, 3, catalog.challengeWeeks);
     const done = chs.filter((c) => challengeState(c, data, week, new Date(now))?.done).length;
     $('season-sub').textContent = sp.maxed ? '¡Pase completado!' : `${sp.xpInTier}/${sp.xpPerTier} XP${chs.length ? ` · retos ${done}/${chs.length}` : ''}`;
   }

@@ -762,10 +762,13 @@ function renderHowTo(cfg) {
 function renderChallenges() {
   const now = new Date();
   const week = weekOf(now);
-  const chs = pickChallenges(st.catalog.challenges || [], week.id);
+  const chs = pickChallenges(st.catalog.challenges || [], week.id, 3, st.catalog.challengeWeeks);
+  const theme = st.catalog.challengeWeeks?.[week.id]?.note;
   const completed = Object.values(data.challenges || {}).reduce((a, w) => a + Object.keys(w).length, 0);
   const left = daysUntil(week.end, now);
   $('ch-sub').textContent = `Semana ${week.id.split('-S')[1]} · ${left <= 0 ? 'último día' : `quedan ${left + 1} días`} · ${completed} retos completados en total`;
+  $('ch-theme').hidden = !theme;
+  $('ch-theme').textContent = theme || '';
   fill(
     $('challenges'),
     chs.length

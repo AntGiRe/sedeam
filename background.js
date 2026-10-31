@@ -123,7 +123,7 @@ function tick(reason, idleState) {
 
     // Retos antes que logros: completar un reto puede desbloquear un logro en el mismo apunte.
     let view = all();
-    const doneChallenges = resolveChallenges(view, catalog.challenges || [], new Date(now));
+    const doneChallenges = resolveChallenges(view, catalog.challenges || [], new Date(now), catalog.challengeWeeks);
     // También se evalúa sin cambios de tiempo: un catálogo nuevo puede traer logros que ya se cumplen.
     const fresh = evaluate(view, catalog.achievements, now);
     const pause = await checkBreak(game, settings, now);

@@ -486,4 +486,31 @@ test('nube: el perfil gana el cambio más reciente', () => {
   assert.equal(profileAction({ profile: { name: 'Remoto' }, profileUpdatedAt: 1 }, { ...remote, prefs: { sound: false } }, cloud), 'pull');
 });
 
+test('calendario de retos: semanas planificadas y temáticos fuera del bombo', () => {
+  const weeks = catalog.challengeWeeks;
+  assert.ok(Object.keys(weeks).length >= 14);
+  // La semana del cierre del 4T trae sus retos y su lema.
+  assert.deepEqual(pickChallenges(catalog.challenges, '2027-S04', 3, weeks).map((c) => c.id), ['superviviente-30', 'maraton-cierre', 'cotizaciones']);
+  assert.match(weeks['2027-S04'].note, /cierre/i);
+  for (const [w, v] of Object.entries(weeks)) {
+    const picked = pickChallenges(catalog.challenges, w, 3, weeks);
+    assert.equal(picked.length, v.ids.length, w);
+    assert.ok(picked.filter((c) => c.mode === 'max').length <= 1, w);
+  }
+  // Los temáticos nunca salen al azar.
+  const themed = new Set(catalog.challenges.filter((c) => !c.pool).map((c) => c.id));
+  assert.ok(themed.size >= 10);
+  for (let k = 0; k < 200; k++) assert.ok(!pickChallenges(catalog.challenges, `x${k}`, 3, weeks).some((c) => themed.has(c.id)));
+  // Una semana que apunta a un reto que ya no existe usa los que sí existen (y si no queda ninguno, al azar).
+  assert.equal(pickChallenges(catalog.challenges, 'q', 3, { q: { ids: ['no-existe', 'buzon'] } }).length, 1);
+  assert.equal(pickChallenges(catalog.challenges, 'q', 3, { q: { ids: ['no-existe'] } }).length, 3);
+  // Completar un reto del calendario funciona igual: «Último día de temporada» (3 h el lunes 1-feb).
+  const d = emptyData();
+  commitSegment(d, 'aeat', t('2027-02-01T08:00'), t('2027-02-01T11:30'));
+  const done = resolveChallenges(d, catalog.challenges, new Date(2027, 1, 1, 12), weeks).map((c) => c.id);
+  assert.ok(done.includes('ultimo-dia'));
+  // Y cuenta para la temporada 4T 2026, que acaba ese día.
+  assert.equal(seasonProgress(d, catalog.seasons, seasonAt(catalog.seasons, new Date(2027, 1, 1))).bonusMs, 3 * HOUR);
+});
+
 console.log(`\n${ok} pruebas OK`);

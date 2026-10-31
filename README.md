@@ -48,6 +48,7 @@ Todo el catálogo vive en **Supabase**, en las tablas `catalog_*`. Se edita desd
 | Añadir o corregir un plazo | `catalog_deadlines` | `day` es un número o `last`. `months` vacío significa todos los meses. `shift`: `after` (pasa al lunes) o `before` (al viernes). |
 | Añadir una sede | `catalog_games` | Los avisos y las caídas en una sede nueva necesitan además su permiso en `manifest.json` (versión nueva). |
 | Logros, retos, recompensas | `catalog_achievements`, `catalog_challenges`, `catalog_rewards` | Las reglas van en JSON (tipos en `lib/rules.js`). |
+| Planificar los retos de una semana | `catalog_challenge_weeks` | Una fila por semana (`2026-S45`) con sus retos (ids de `catalog_challenges`) y un lema. Las semanas sin fila salen al azar. Los retos con `in_pool = false` solo salen por calendario. No cambies una semana ya empezada. |
 | Quitar algo sin borrarlo | cualquiera | `active = false` |
 | Niveles, temporadas, Cl@ve | `catalog_settings` | `levels`, `seasons`, `loading`, `minAppVersion` |
 
@@ -66,7 +67,9 @@ Los SQL están en `supabase/` y se ejecutan en **SQL Editor**, en este orden:
 1. `migrations/0001_cuentas_y_sincronizacion.sql`: cuentas y sincronización entre PCs.
 2. `migrations/0002_catalogo.sql`: catálogo y ajustes sincronizados.
 3. `seed/catalogo.sql`: carga inicial del catálogo. Se genera con `python3 dev/catalog-to-sql.py`.
-4. `tests/aislamiento.sql`: comprueba que cada usuario solo ve lo suyo. Lo deshace todo al terminar.
+4. `migrations/0003_calendario_retos.sql`: calendario de retos semanales.
+5. `seed/retos_temporada_4T_2026.sql`: retos temáticos y calendario hasta el 1 de febrero de 2027.
+6. `tests/aislamiento.sql`: comprueba que cada usuario solo ve lo suyo. Lo deshace todo al terminar.
 
 ### Publicar una versión nueva del código
 

@@ -367,6 +367,7 @@
     .srow .medal { font-size: 20px; width: 24px; text-align: center; }
     .srow .tierv { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+    .ch-theme { display: inline-block; margin-left: 10px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; vertical-align: 2px; background: color-mix(in srgb, var(--accent) 18%, transparent); color: color-mix(in srgb, var(--accent) 70%, var(--text)); }
     .challenges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .ch { border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); padding: 14px; display: grid; gap: 8px; align-content: start; }
     .ch .top { display: flex; gap: 10px; align-items: center; }
@@ -491,7 +492,7 @@
       <div class="season-hero" id="season-hero"></div>
       <div class="howto" id="howto" aria-label="Cómo se gana XP"></div>
       <div class="card">
-        <div class="card-head"><h2>Retos de la semana</h2><span class="muted" id="ch-sub"></span></div>
+        <div class="card-head"><h2>Retos de la semana <span class="ch-theme" id="ch-theme" hidden></span></h2><span class="muted" id="ch-sub"></span></div>
         <div class="challenges" id="challenges"></div>
       </div>
       <div class="card">
