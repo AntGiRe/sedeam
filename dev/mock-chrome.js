@@ -58,6 +58,8 @@
       status: location.search.includes('error') ? { at: now - 60000, error: 'Failed to fetch' } : { at: now - 2 * 60000, error: null },
     };
   }
+  // ?supabase simula que el catálogo ya se ha descargado de Supabase.
+  if (location.search.includes('supabase')) local.catalogStatus = { at: now - 3 * 60000, from: 'supabase', error: null };
   // ?vacio simula una instalación recién hecha, sin horas ni logros.
   if (location.search.includes('vacio')) for (const k of Object.keys(local)) delete local[k];
   const session = location.search.includes('vacio') ? {} : { live: { game: 'aeat', start: now - 20000 } };

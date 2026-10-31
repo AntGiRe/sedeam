@@ -240,6 +240,8 @@
     .about { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
     .about h3 { margin-bottom: 2px; }
     .about .help { margin: 0; }
+    .about .cat-status { margin: 4px 0 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+    .about .cat-status .sync-pill { margin-top: 0; }
     .account .acc-head { display: flex; align-items: center; gap: 14px; }
     .account .acc-head .avatar { width: 52px; height: 52px; font-size: 28px; border-radius: 10px; }
     .account .acc-head .avatar .lvl { display: none; }
@@ -654,7 +656,7 @@
       </div>
 
       <div class="card about">
-        <div><h3 id="ver-title">Sedeam</h3><p class="help" id="upd-help"></p></div>
+        <div><h3 id="ver-title">Sedeam</h3><div class="cat-status" id="cat-status"></div><p class="help" id="upd-help"></p></div>
         <button id="upd-check">Buscar actualizaciones</button>
       </div>
     </section>

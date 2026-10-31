@@ -1164,6 +1164,15 @@ function renderSettings() {
   const u = st.updateStatus;
   const v = chrome.runtime.getManifest().version;
   $('ver-title').textContent = `${BRAND.name} ${v}`;
+  // De dónde sale el catálogo (plazos, novedades, logros…) y cuándo se ha comprobado.
+  const cs = st.catalogStatus;
+  const origin = { supabase: 'Supabase', github: 'GitHub (respaldo)', bundled: 'la copia que trae la extensión' }[st.catalog.source] || 'la nube';
+  fill(
+    $('cat-status'),
+    el('span', { class: `sync-pill${cs?.error ? ' err' : st.catalog.source === 'bundled' ? ' wait' : ''}` },
+      cs?.error ? `Catálogo: sin conexión, se usa ${origin}` : `Catálogo de ${origin}`),
+    el('small', { class: 'muted' }, ` · ${st.catalog.games.length} sedes, ${st.catalog.achievements.length} logros, ${st.catalog.deadlines.length} plazos, ${st.catalog.news.length} novedades${cs?.at ? ` · comprobado ${fmtAgo(cs.at) === 'Hoy' ? `a las ${new Date(cs.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : fmtAgo(cs.at).toLowerCase()}` : ''}`),
+  );
   $('upd-help').textContent = !REMOTE_ENABLED
     ? 'Sin repositorio de actualizaciones configurado.'
     : updateAvailable(u)
@@ -1334,7 +1343,7 @@ chrome.storage.onChanged.addListener((changes) => {
   if (toast && Date.now() - toast.at < 10_000 && document.visibilityState === 'visible') {
     showToasts(toast.items, { sound: st?.settings.sound, brand: BRAND.name });
   }
-  if (changes.data || changes.settings || changes.remoteCatalog || changes.updateStatus || changes.live || changes.cloud || changes.cloudSession) refresh();
+  if (changes.data || changes.settings || changes.remoteCatalog || changes.updateStatus || changes.live || changes.cloud || changes.cloudSession || changes.catalogStatus) refresh();
 });
 wireSettings();
 wireProfile();
