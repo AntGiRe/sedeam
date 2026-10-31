@@ -69,7 +69,13 @@ Los SQL están en `supabase/` y se ejecutan en **SQL Editor**, en este orden:
 3. `seed/catalogo.sql`: carga inicial del catálogo. Se genera con `python3 dev/catalog-to-sql.py`.
 4. `migrations/0003_calendario_retos.sql`: calendario de retos semanales.
 5. `seed/retos_temporada_4T_2026.sql`: retos temáticos y calendario hasta el 1 de febrero de 2027.
-6. `tests/aislamiento.sql`: comprueba que cada usuario solo ve lo suyo. Lo deshace todo al terminar.
+6. `migrations/0004_admins.sql`: cuentas de la casa (Modo CEO).
+7. `seed/admin.sql`: te da de alta como CEO. Antes tienes que haber entrado en Sedeam con Google.
+8. `tests/aislamiento.sql`: comprueba que cada usuario solo ve lo suyo. Lo deshace todo al terminar.
+
+### Modo CEO
+
+Las cuentas de la tabla `admins` ven un botón **👑 Vista CEO / 👁 Vista normal** arriba y una tarjeta en Ajustes. En vista CEO se ven todos los logros, rangos, temas y el pase completo. También se puede abrir el Wrapped del año antes de diciembre y revisar el calendario de retos. Todo esto es **solo a la vista**: no se guarda ni se sube nada, y las estadísticas, el Wrapped y el informe usan los datos reales. Para añadir o quitar a alguien, usa Table Editor → `admins`. En el código no hay ningún email.
 
 ### Publicar una versión nueva del código
 

@@ -13,6 +13,7 @@ import { parsePeriod, latestPeriods, computeWrapped, equivalence, yearUnlockDate
 import { emptyCloud, mergeData, buildUploads, applyPulled, profileAction, prefsOf, syncSig } from '../lib/cloud-core.js';
 import { totalXp, levelOf, grantDailyBonus, dropsCrossed, bonusXp } from '../lib/xp.js';
 import { weekOf, pickChallenges, challengeState, resolveChallenges } from '../lib/challenges.js';
+import { ceoLens, ceoOn, isCeo } from '../lib/ceo.js';
 import { isLoadingUrl, addLoading, outageKind, outageTarget, recordOutage, recordTabs } from '../lib/extras.js';
 
 const catalogJson = JSON.parse(readFileSync(new URL('../catalog.json', import.meta.url)));
@@ -511,6 +512,32 @@ test('calendario de retos: semanas planificadas y temáticos fuera del bombo', (
   assert.ok(done.includes('ultimo-dia'));
   // Y cuenta para la temporada 4T 2026, que acaba ese día.
   assert.equal(seasonProgress(d, catalog.seasons, seasonAt(catalog.seasons, new Date(2027, 1, 1))).bonusMs, 3 * HOUR);
+});
+
+test('modo CEO: todo desbloqueado a la vista, sin tocar los datos reales', () => {
+  // Solo con admin: true de la base de datos; ni un email ni un ajuste bastan.
+  assert.equal(ceoOn(null, { ceoView: true }), false);
+  assert.equal(ceoOn({ admin: 'yes' }, { ceoView: true }), false);
+  assert.equal(ceoOn({ admin: true }, { ceoView: false }), false);
+  assert.equal(ceoOn({ admin: true }, {}), true);
+  assert.equal(isCeo({ admin: true }), true);
+
+  const d = emptyData();
+  commitSegment(d, 'aeat', t('2026-10-30T09:00'), t('2026-10-30T10:00'));
+  d.achievements = { primera: 111 };
+  const before = structuredClone(d);
+  const now = t('2026-10-31T12:00');
+  const v = ceoLens(d, catalog, now);
+  assert.deepEqual(d, before, 'la lente no puede cambiar los datos');
+  assert.equal(Object.keys(v.achievements).length, new Set([...catalog.achievements.map((a) => a.id), 'primera']).size);
+  assert.equal(v.achievements.primera, 111, 'los logros reales conservan su fecha');
+  assert.equal(levelOf(v, catalog.levels).level, catalog.levels.length);
+  const season = seasonAt(catalog.seasons, new Date(now));
+  assert.ok(seasonProgress(v, catalog.seasons, season).maxed);
+  const ctx = rewardContext(v, catalog, new Date(now));
+  for (const r of catalog.rewards) assert.ok(isUnlocked(r, ctx), `recompensa sin desbloquear: ${r.id}`);
+  // Las horas no se inventan: estadísticas y Wrapped siguen igual.
+  assert.deepEqual(v.days, d.days);
 });
 
 console.log(`\n${ok} pruebas OK`);

@@ -158,6 +158,11 @@ function renderChrome() {
   applyTheme(profile.theme);
   $('chip-title').textContent = profile.name;
   fill($('chip-status'), live ? el('span', { class: 'status-playing' }, `Jugando a ${live.name}`) : el('span', { class: 'rank' }, `${profile.titleText} · Nv. ${lv.level}`));
+  const ceo = $('ceo-toggle');
+  ceo.hidden = !st.isCeo;
+  ceo.classList.toggle('on', st.ceo);
+  ceo.textContent = st.ceo ? '👑 Vista CEO' : '👁 Vista normal';
+  ceo.title = st.ceo ? 'Ves todo desbloqueado. Pulsa para verlo como los demás.' : 'Lo ves como cualquier usuario. Pulsa para volver a la vista CEO.';
   paintAvatar($('chip-avatar'), profile, lv.level, !!live);
 
   const upd = updateAvailable(st.updateStatus);
@@ -560,7 +565,7 @@ function renderWrapLinks() {
   const thisMonth = dayKey(now).slice(0, 7);
   const [last] = latestPeriods(now).filter((x) => x.length === 7);
   const y = now.getFullYear();
-  const open = isYearUnlocked(y, now);
+  const open = isYearUnlocked(y, now) || st.ceo;
   const days = Math.ceil((yearUnlockDate(y) - now) / 86_400_000);
   const hasPrevYear = Object.keys(data.days).some((k) => k.startsWith(String(y - 1)));
   const link = (href, text, primary, title) => el('a', { class: `btn${primary ? ' primary' : ''}`, href, target: '_blank', title }, text);
@@ -1157,6 +1162,7 @@ const doDeleteAccount = () => {
 
 function renderSettings() {
   renderAccount();
+  renderCeo();
   $('notif').checked = !!st.settings.notifications;
   $('sound').checked = !!st.settings.sound;
   $('sound').disabled = !st.settings.notifications;
@@ -1182,6 +1188,48 @@ function renderSettings() {
       ? `Hay una versión nueva: ${u.published}. Descárgala desde GitHub o haz «git pull»; tus datos se conservan.`
       : `Estás al día${u?.checkedAt ? ` (comprobado ${fmtAgo(u.checkedAt).toLowerCase()})` : ''}. Los juegos, logros y plazos nuevos llegan solos.`;
 }
+
+// Solo para cuentas de la casa (tabla admins de Supabase).
+function renderCeo() {
+  $('ceo-card').hidden = !st.isCeo;
+  if (!st.isCeo) return;
+  $('ceo-view').checked = st.ceo;
+  const y = new Date().getFullYear();
+  fill(
+    $('ceo-actions'),
+    el('a', { class: 'btn', href: `wrapped.html?periodo=${y}&forzar=1`, target: '_blank' }, `🎁 Wrapped ${y} (real)`),
+    el('button', { type: 'button', onclick: () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}) }, '🧪 Probar aviso'),
+    el('button', { type: 'button', onclick: (e) => busy(e.target, 'Recargando…', () => chrome.runtime.sendMessage({ type: 'check-updates' })) }, '↻ Recargar catálogo'),
+  );
+  // El calendario de retos tal y como llega del catálogo, para revisarlo antes de que empiece cada semana.
+  const now = weekOf().id;
+  const weeks = Object.keys(st.catalog.challengeWeeks || {}).sort();
+  fill(
+    $('ceo-weeks'),
+    weeks.length
+      ? weeks.map((w) => {
+          const chs = pickChallenges(st.catalog.challenges || [], w, 3, st.catalog.challengeWeeks);
+          return el(
+            'div',
+            { class: `wk${w === now ? ' now' : ''}` },
+            el('span', {}, el('b', {}, w.replace('-S', ' · S')), el('small', {}, w === now ? 'esta semana' : w < now ? 'pasada' : '')),
+            el('span', {}, el('b', {}, st.catalog.challengeWeeks[w].note || 'Sin lema'), el('small', {}, chs.map((c) => `${c.emoji} ${c.name}`).join(' · '))),
+          );
+        })
+      : el('p', { class: 'muted', style: 'margin:0' }, 'No hay semanas planificadas: los retos salen al azar.'),
+  );
+}
+
+async function busy(btn, text, fn) {
+  const prev = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = text;
+  await fn().catch(() => {});
+  btn.disabled = false;
+  btn.textContent = prev;
+}
+
+const toggleCeo = () => updateSettings({ ceoView: !st.ceo });
 
 const saveShortcuts = (list) => updateSettings({ shortcuts: list });
 
@@ -1229,6 +1277,8 @@ function wireSettings() {
   $('sound').addEventListener('change', (e) => updateSettings({ sound: e.target.checked }));
   $('dl-alerts').addEventListener('change', (e) => updateSettings({ deadlineAlerts: e.target.checked }));
   $('break-on').addEventListener('change', (e) => updateSettings({ breakReminder: e.target.checked }));
+  $('ceo-toggle').addEventListener('click', toggleCeo);
+  $('ceo-view').addEventListener('change', toggleCeo);
   $('test-toast').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}));
   $('sc-reset').addEventListener('click', () => {
     if (confirm('¿Volver a los accesos directos de serie? Se quitarán los que hayas añadido.')) updateSettings({ shortcuts: null });

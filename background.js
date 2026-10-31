@@ -439,6 +439,9 @@ async function runSync() {
       cloud.sent.profile = syncSig(profile, prefs);
     }
 
+    // ¿Cuenta de la casa? Solo activa el Modo CEO (lo que se ve); no da ningún permiso en la base de datos.
+    cloud.admin = await api('/rpc/am_i_admin', { method: 'POST', body: {} }).then((r) => r === true, () => cloud.admin === true);
+
     // Bajar (lo de los otros PCs, solo lo cambiado desde la última vez)
     const me = cloud.deviceId;
     const since = (k) => encodeURIComponent(cloud.lastPull[k] || '1970-01-01T00:00:00Z');

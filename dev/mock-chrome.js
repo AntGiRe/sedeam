@@ -58,17 +58,20 @@
       status: location.search.includes('error') ? { at: now - 60000, error: 'Failed to fetch' } : { at: now - 2 * 60000, error: null },
     };
   }
+  // ?ceo simula una cuenta de la casa (tabla admins): sale el Modo CEO.
+  if (location.search.includes('ceo') && local.cloud) local.cloud.admin = true;
   // ?supabase simula que el catálogo ya se ha descargado de Supabase.
   if (location.search.includes('supabase')) local.catalogStatus = { at: now - 3 * 60000, from: 'supabase', error: null };
   // ?vacio simula una instalación recién hecha, sin horas ni logros.
   if (location.search.includes('vacio')) for (const k of Object.keys(local)) delete local[k];
   const session = location.search.includes('vacio') ? {} : { live: { game: 'aeat', start: now - 20000 } };
+  const listeners = [];
   const pick = (store, keys) => Object.fromEntries((Array.isArray(keys) ? keys : [keys]).filter((k) => k in store).map((k) => [k, store[k]]));
   window.chrome = {
     storage: {
-      local: { get: async (k) => pick(local, k), set: async (o) => Object.assign(local, o), remove: async (k) => delete local[k] },
+      local: { get: async (k) => pick(local, k), set: async (o) => { Object.assign(local, o); const ch = Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { newValue: v }])); listeners.forEach((f) => f(ch)); }, remove: async (k) => delete local[k] },
       session: { get: async (k) => pick(session, k), set: async (o) => Object.assign(session, o) },
-      onChanged: { addListener() {} },
+      onChanged: { addListener: (f) => listeners.push(f) },
     },
     runtime: { sendMessage: async () => true, getURL: (p) => '../' + p, getManifest: () => ({ version: '0.2.0' }) },
     tabs: {

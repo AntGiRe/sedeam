@@ -23,6 +23,19 @@
     .me-chip .who span.rank { color: color-mix(in srgb, var(--accent) 70%, #fff); }
     .me-chip .avatar { width: 34px; height: 34px; font-size: 18px; border-radius: 6px; }
     .me-chip .lvl { min-width: 20px; height: 20px; font-size: 10px; right: -7px; bottom: -7px; }
+    /* Modo CEO: interruptor arriba y tarjeta en Ajustes, solo para cuentas de la casa */
+    .ceo-toggle { margin-left: auto; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .02em;
+      border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #c6d4df; cursor: pointer; white-space: nowrap; }
+    .ceo-toggle:hover { background: rgba(255,255,255,.12); }
+    .ceo-toggle.on { border-color: #e8b64c; background: color-mix(in srgb, #e8b64c 18%, transparent); color: #f5d27a; }
+    .ceo-toggle:not([hidden]) + .me-chip { margin-left: 0; }
+    .ceo-card { border-color: color-mix(in srgb, #e8b64c 45%, transparent); }
+    .ceo-card h3 { color: #f5d27a; }
+    .ceo-weeks { display: grid; gap: 6px; margin-top: 12px; max-height: 260px; overflow: auto; }
+    .ceo-weeks .wk { display: grid; grid-template-columns: 78px 1fr; gap: 10px; font-size: 12px; padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,.03); }
+    .ceo-weeks .wk.now { outline: 1px solid #e8b64c; }
+    .ceo-weeks .wk b { display: block; font-size: 12px; }
+    .ceo-weeks .wk small { color: var(--muted); }
     .me-chip .who { text-align: right; line-height: 1.25; }
     .me-chip .who b { display: block; font-size: 13px; }
     .me-chip .who span { font-size: 11px; }
@@ -463,6 +476,7 @@
         <a href="#perfil" data-tab="perfil">Perfil</a>
         <a href="#ajustes" data-tab="ajustes">Ajustes</a>
       </nav>
+      <button class="ceo-toggle" id="ceo-toggle" type="button" hidden></button>
       <a class="me-chip" href="#perfil">
         <div class="who"><b id="chip-title"></b><span id="chip-status"></span></div>
         <div class="avatar" id="chip-avatar" aria-hidden="true">🧑‍💼<span class="lvl" id="chip-lvl">1</span></div>
@@ -624,6 +638,15 @@
     <!-- AJUSTES -->
     <section class="view settings" id="ajustes" hidden>
       <div class="card account" id="account"></div>
+
+      <div class="card ceo-card" id="ceo-card" hidden>
+        <h3>👑 Modo CEO</h3>
+        <div class="switches">
+          <label class="sw-row"><span><b>Vista CEO</b><small>Todos los logros, rangos, temas y el pase completo. Solo a la vista: tus datos reales no cambian.</small></span><input type="checkbox" class="switch" id="ceo-view"></label>
+        </div>
+        <div class="actions" style="margin-top:14px" id="ceo-actions"></div>
+        <div class="ceo-weeks" id="ceo-weeks"></div>
+      </div>
 
       <div class="card">
         <h3>Avisos</h3>

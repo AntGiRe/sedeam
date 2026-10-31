@@ -246,7 +246,8 @@ function setPaused(v) {
 }
 
 async function main() {
-  const st = await loadAll();
+  // Con los datos reales también en Modo CEO: el Wrapped es lo que has hecho de verdad.
+  const st = await loadAll({ lens: false });
   const { profile } = profileFor(st, st.data);
   applyTheme(profile.theme);
   const params = new URLSearchParams(location.search);
@@ -255,8 +256,8 @@ async function main() {
   document.title = `${BRAND.name} Wrapped · ${w.period.label}`;
   const isYear = w.period.kind === 'year';
   document.body.classList.toggle('year', isYear);
-  // ?forzar=1 deja ver el del año antes de tiempo (para probar).
-  const locked = isYear && !isYearUnlocked(Number(w.period.id)) && !params.has('forzar');
+  // ?forzar=1 (o el Modo CEO) deja ver el del año antes de tiempo.
+  const locked = isYear && !isYearUnlocked(Number(w.period.id)) && !params.has('forzar') && !st.ceo;
   if (isYear) slideMs = 8000;
   slides = !isYear ? build(w, profile, st) : locked ? buildLocked(w) : buildYear(w, profile, { finalSlide: () => makeFinal(w, profile, st) });
   // El del año empieza con una pantalla de inicio (el clic permite además poner música).

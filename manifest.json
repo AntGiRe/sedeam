@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Sedeam",
   "short_name": "Sedeam",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Tu biblioteca de trámites. Cuenta tus horas en Hacienda, la Seguridad Social y demás sedes como si fueran juegos, con logros y niveles.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4I6y4Kx9H4oWk9YNwIdlFFFh7Y1T+jbDo7KJu0FTA642ADXUvkgHbgqDnp8fSBVv/myLsfWYg83bjGX4sUaaPV4l5455psx15bC/BuSIuvHKwOZqqcSjtLnMe7X62MuGZwrFel2xyCTR7PYV74j01H7S2Q0peuQiCPOsaxOZ3QRDcBUmKB/beMqLhstTZCkVjNlgeUBdosRjkg0wU5yDuBrh5HHXjfnawXmZV0jGuV0R/mJW9oLb3gWX2ENSoXGku93WWGHNAxPe7eosYXeB8KJjntp2xvgY6FSUs/MDZvlcavsET+E335tCkLScuuhtOFRic0a0DZA8uPjGQ97VlwIDAQAB",
   "permissions": [

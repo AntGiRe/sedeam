@@ -99,7 +99,7 @@ function csv() {
 }
 
 async function main() {
-  st = await loadAll();
+  st = await loadAll({ lens: false });
   const months = [...new Set([dayKey(new Date()).slice(0, 7), ...Object.keys(st.data.days).map((k) => k.slice(0, 7))])].sort().reverse();
   const q = new URLSearchParams(location.search).get('mes');
   const current = q && parsePeriod(q)?.kind === 'month' ? q : months[0];
