@@ -75,7 +75,7 @@ Los SQL están en `supabase/` y se ejecutan en **SQL Editor**, en este orden:
 
 ### Modo CEO
 
-Las cuentas de la tabla `admins` ven un botón **👑 Vista CEO / 👁 Vista normal** arriba y una tarjeta en Ajustes. En vista CEO se ven todos los logros, rangos, temas y el pase completo. También se puede abrir el Wrapped del año antes de diciembre y revisar el calendario de retos. Todo esto es **solo a la vista**: no se guarda ni se sube nada, y las estadísticas, el Wrapped y el informe usan los datos reales. Para añadir o quitar a alguien, usa Table Editor → `admins`. En el código no hay ningún email.
+Las cuentas de la tabla `admins` ven un botón **👑 Vista CEO / 👁 Vista normal** arriba y una tarjeta en Ajustes. En vista CEO se ven todos los logros, rangos, temas y el pase completo. También se puede abrir el Wrapped del año antes de diciembre, revisar el calendario de retos, ver de dónde viene el catálogo, probar los avisos y buscar actualizaciones. Los demás usuarios solo ven la versión y si está al día. Todo esto es **solo a la vista**: no se guarda ni se sube nada, y las estadísticas, el Wrapped y el informe usan los datos reales. Para añadir o quitar a alguien, usa Table Editor → `admins`. En el código no hay ningún email.
 
 ### Publicar una versión nueva del código
 

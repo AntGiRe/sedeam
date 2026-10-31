@@ -251,10 +251,10 @@
     .switch:checked { background: var(--accent-strong); border-color: transparent; }
     .switch:checked::after { transform: translateX(18px); }
     .about { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-    .about h3 { margin-bottom: 2px; }
-    .about .help { margin: 0; }
-    .about .cat-status { margin: 4px 0 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
-    .about .cat-status .sync-pill { margin-top: 0; }
+    .about h3 { margin: 0; }
+    .about .sync-pill { margin-top: 0; }
+    .cat-status { margin: 12px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+    .cat-status .sync-pill { margin-top: 0; }
     .account .acc-head { display: flex; align-items: center; gap: 14px; }
     .account .acc-head .avatar { width: 52px; height: 52px; font-size: 28px; border-radius: 10px; }
     .account .acc-head .avatar .lvl { display: none; }
@@ -484,7 +484,7 @@
     </div>
   </div>
   <div class="update-banner" id="update-banner" hidden>
-    <div><span id="update-text"></span><a class="btn" id="update-link" href="#ajustes">Cómo actualizar</a></div>
+    <div><span id="update-text"></span><a class="btn" id="update-link" href="https://github.com/AntGiRe/sedeam/releases/latest" target="_blank">Descargar</a></div>
   </div>
 
   <main>
@@ -644,7 +644,9 @@
         <div class="switches">
           <label class="sw-row"><span><b>Vista CEO</b><small>Todos los logros, rangos, temas y el pase completo. Solo a la vista: tus datos reales no cambian.</small></span><input type="checkbox" class="switch" id="ceo-view"></label>
         </div>
-        <div class="actions" style="margin-top:14px" id="ceo-actions"></div>
+        <div class="cat-status" id="cat-status"></div>
+        <div class="actions" style="margin-top:12px" id="ceo-actions"></div>
+        <p class="help">¿Alguien no ve los avisos fuera de las sedes? En el Mac: Ajustes del Sistema → Notificaciones → Google Chrome → Permitir.</p>
         <div class="ceo-weeks" id="ceo-weeks"></div>
       </div>
 
@@ -656,8 +658,6 @@
           <label class="sw-row"><span><b>Recordatorios de plazos</b><small>3 días antes, la víspera y el mismo día</small></span><input type="checkbox" class="switch" id="dl-alerts"></label>
           <label class="sw-row"><span><b>Pausa activa</b><small>Un aviso tras 1 h 30 min seguidos en sedes</small></span><input type="checkbox" class="switch" id="break-on"></label>
         </div>
-        <div class="actions" style="margin-top:14px"><button id="test-toast">Probar aviso</button></div>
-        <p class="help">¿No ves nada fuera de las sedes? En el Mac: Ajustes del Sistema → Notificaciones → Google Chrome → Permitir.</p>
       </div>
 
       <div class="card">
@@ -680,8 +680,8 @@
       </div>
 
       <div class="card about">
-        <div><h3 id="ver-title">Sedeam</h3><div class="cat-status" id="cat-status"></div><p class="help" id="upd-help"></p></div>
-        <button id="upd-check">Buscar actualizaciones</button>
+        <h3 id="ver-title">Sedeam</h3>
+        <span class="sync-pill" id="upd-pill"></span>
       </div>
     </section>
   </main>

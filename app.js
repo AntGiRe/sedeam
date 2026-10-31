@@ -1170,23 +1170,13 @@ function renderSettings() {
   $('break-on').checked = !!st.settings.breakReminder;
   renderShortcutsSettings();
 
+  // Para todos, solo la versión y si está al día; lo técnico (catálogo, comprobaciones) va en Modo CEO.
   const u = st.updateStatus;
   const v = chrome.runtime.getManifest().version;
   $('ver-title').textContent = `${BRAND.name} ${v}`;
-  // De dónde sale el catálogo (plazos, novedades, logros…) y cuándo se ha comprobado.
-  const cs = st.catalogStatus;
-  const origin = { supabase: 'Supabase', github: 'GitHub (respaldo)', bundled: 'la copia que trae la extensión' }[st.catalog.source] || 'la nube';
-  fill(
-    $('cat-status'),
-    el('span', { class: `sync-pill${cs?.error ? ' err' : st.catalog.source === 'bundled' ? ' wait' : ''}` },
-      cs?.error ? `Catálogo: sin conexión, se usa ${origin}` : `Catálogo de ${origin}`),
-    el('small', { class: 'muted' }, ` · ${st.catalog.games.length} sedes, ${st.catalog.achievements.length} logros, ${st.catalog.deadlines.length} plazos, ${st.catalog.news.length} novedades${cs?.at ? ` · comprobado ${fmtAgo(cs.at) === 'Hoy' ? `a las ${new Date(cs.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : fmtAgo(cs.at).toLowerCase()}` : ''}`),
-  );
-  $('upd-help').textContent = !REMOTE_ENABLED
-    ? 'Sin repositorio de actualizaciones configurado.'
-    : updateAvailable(u)
-      ? `Hay una versión nueva: ${u.published}. Descárgala desde GitHub o haz «git pull»; tus datos se conservan.`
-      : `Estás al día${u?.checkedAt ? ` (comprobado ${fmtAgo(u.checkedAt).toLowerCase()})` : ''}. Los juegos, logros y plazos nuevos llegan solos.`;
+  const upd = updateAvailable(u);
+  $('upd-pill').className = `sync-pill${upd ? ' wait' : ''}`;
+  $('upd-pill').textContent = upd ? `Versión ${u.published} disponible` : 'Al día';
 }
 
 // Solo para cuentas de la casa (tabla admins de Supabase).
@@ -1194,12 +1184,23 @@ function renderCeo() {
   $('ceo-card').hidden = !st.isCeo;
   if (!st.isCeo) return;
   $('ceo-view').checked = st.ceo;
+  // De dónde sale el catálogo (plazos, novedades, logros…) y cuándo se ha comprobado.
+  const cs = st.catalogStatus;
+  const u = st.updateStatus;
+  const origin = { supabase: 'Supabase', github: 'GitHub (respaldo)', bundled: 'la copia que trae la extensión' }[st.catalog.source] || 'la nube';
+  const when = (ts) => (fmtAgo(ts) === 'Hoy' ? `a las ${new Date(ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : fmtAgo(ts).toLowerCase());
+  fill(
+    $('cat-status'),
+    el('span', { class: `sync-pill${cs?.error ? ' err' : st.catalog.source === 'bundled' ? ' wait' : ''}` },
+      cs?.error ? `Catálogo: sin conexión, se usa ${origin}` : `Catálogo de ${origin}`),
+    el('small', { class: 'muted' }, ` · ${st.catalog.games.length} sedes, ${st.catalog.achievements.length} logros, ${st.catalog.deadlines.length} plazos, ${st.catalog.news.length} novedades${cs?.at ? ` · comprobado ${when(cs.at)}` : ''}${!REMOTE_ENABLED ? ' · sin repositorio de actualizaciones' : u?.checkedAt ? ` · versión comprobada ${when(u.checkedAt)}` : ''}`),
+  );
   const y = new Date().getFullYear();
   fill(
     $('ceo-actions'),
     el('a', { class: 'btn', href: `wrapped.html?periodo=${y}&forzar=1`, target: '_blank' }, `🎁 Wrapped ${y} (real)`),
     el('button', { type: 'button', onclick: () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}) }, '🧪 Probar aviso'),
-    el('button', { type: 'button', onclick: (e) => busy(e.target, 'Recargando…', () => chrome.runtime.sendMessage({ type: 'check-updates' })) }, '↻ Recargar catálogo'),
+    el('button', { type: 'button', onclick: (e) => busy(e.target, 'Buscando…', () => chrome.runtime.sendMessage({ type: 'check-updates' })) }, '↻ Buscar actualizaciones'),
   );
   // El calendario de retos tal y como llega del catálogo, para revisarlo antes de que empiece cada semana.
   const now = weekOf().id;
@@ -1279,17 +1280,8 @@ function wireSettings() {
   $('break-on').addEventListener('change', (e) => updateSettings({ breakReminder: e.target.checked }));
   $('ceo-toggle').addEventListener('click', toggleCeo);
   $('ceo-view').addEventListener('change', toggleCeo);
-  $('test-toast').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'test-toast' }).catch(() => {}));
   $('sc-reset').addEventListener('click', () => {
     if (confirm('¿Volver a los accesos directos de serie? Se quitarán los que hayas añadido.')) updateSettings({ shortcuts: null });
-  });
-  $('upd-check').addEventListener('click', async (e) => {
-    e.target.disabled = true;
-    e.target.textContent = 'Buscando…';
-    await chrome.runtime.sendMessage({ type: 'check-updates' }).catch(() => {});
-    e.target.disabled = false;
-    e.target.textContent = 'Buscar actualizaciones';
-    refresh();
   });
 
   const slug = BRAND.name.toLowerCase();
