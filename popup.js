@@ -164,7 +164,7 @@ async function addShortcut(name) {
   const list = [...shortcutsOf(state)];
   const game = matchGame(activeTab.url, state.catalog.games);
   list.push({ id: `sc-${Date.now().toString(36)}`, name: name.trim().slice(0, 28), url: activeTab.url, emoji: game?.emoji || '⭐' });
-  state.settings = { ...state.settings, shortcuts: list };
+  state.settings = { ...state.settings, shortcuts: list, profileUpdatedAt: Date.now() };
   await saveSettings(state.settings);
   renderLauncher();
 }

@@ -38,23 +38,35 @@ Hay dos tipos de actualización:
 | **Catálogo**: juegos, logros, niveles y novedades (`catalog.json`) | La extensión descarga el `catalog.json` de GitHub cada hora | Nada. Llega solo y avisa con una notificación. |
 | **Código**: diseño, funciones nuevas… | `scripts/auto-actualizar.sh` hace `git pull` cada 3 horas y la extensión detecta la versión nueva y se recarga sola | Nada, si activaste el script. Si no, `git pull` a mano. |
 
-### Publicar juegos o logros nuevos
+### Publicar novedades, plazos, sedes o logros (sin tocar código)
 
-1. Edita `catalog.json`: añade el juego o el logro.
-2. **Sube `catalogVersion`** en 1.
-3. Ejecuta `node dev/test.mjs` para comprobar que el catálogo es válido.
-4. Haz commit y push. Todas las instalaciones lo recibirán en menos de una hora.
+Todo el catálogo vive en **Supabase**, en las tablas `catalog_*`. Se edita desde **Table Editor**:
 
-Los logros son reglas en JSON, no código: la extensión nunca ejecuta nada descargado. Los tipos de regla disponibles están explicados al principio de `lib/rules.js`. Algunos ejemplos:
+| Para… | Tabla | Notas |
+|---|---|---|
+| Publicar una novedad | `catalog_news` | `date`, `title`, `body`. Con `published = false` queda como borrador. Si la fecha es futura, no sale hasta ese día. |
+| Añadir o corregir un plazo | `catalog_deadlines` | `day` es un número o `last`. `months` vacío significa todos los meses. `shift`: `after` (pasa al lunes) o `before` (al viernes). |
+| Añadir una sede | `catalog_games` | Los avisos y las caídas en una sede nueva necesitan además su permiso en `manifest.json` (versión nueva). |
+| Logros, retos, recompensas | `catalog_achievements`, `catalog_challenges`, `catalog_rewards` | Las reglas van en JSON (tipos en `lib/rules.js`). |
+| Quitar algo sin borrarlo | cualquiera | `active = false` |
+| Niveles, temporadas, Cl@ve | `catalog_settings` | `levels`, `seasons`, `loading`, `minAppVersion` |
 
-```json
-{ "type": "time", "agg": "sum", "game": "aeat", "target": { "hours": 100 } }
-{ "type": "time", "agg": "day", "weekdays": [5], "hours": [17, 24], "target": { "hours": 1 } }
-{ "type": "time", "agg": "year", "game": "aeat", "months": [4, 5, 6], "target": { "hours": 40 } }
-{ "type": "streak", "days": 20 }
+Cualquier cambio sube la versión del catálogo sola y llega a todas las extensiones en menos de una hora. Las tablas no se pueden leer ni escribir desde fuera: la extensión solo llama a `get_catalog()`, que devuelve lo publicado.
+
+`catalog.json`, dentro de la extensión, es una **copia de respaldo**: sirve para la primera instalación o si Supabase no responde. Antes de sacar una versión nueva conviene refrescarla:
+
+```bash
+python3 dev/pull-catalog.py
 ```
 
-Si un logro necesita un tipo de regla nuevo, hay que publicar también código nuevo. En ese caso, pon en el catálogo `"minAppVersion"` con la versión que lo entiende; así las extensiones antiguas siguen usando su catálogo hasta actualizarse.
+### Base de datos (Supabase)
+
+Los SQL están en `supabase/` y se ejecutan en **SQL Editor**, en este orden:
+
+1. `migrations/0001_cuentas_y_sincronizacion.sql`: cuentas y sincronización entre PCs.
+2. `migrations/0002_catalogo.sql`: catálogo y ajustes sincronizados.
+3. `seed/catalogo.sql`: carga inicial del catálogo. Se genera con `python3 dev/catalog-to-sql.py`.
+4. `tests/aislamiento.sql`: comprueba que cada usuario solo ve lo suyo. Lo deshace todo al terminar.
 
 ### Publicar una versión nueva del código
 

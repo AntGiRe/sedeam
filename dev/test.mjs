@@ -10,7 +10,7 @@ import { validateCatalog, pickCatalog } from '../lib/catalog.js';
 import { deadlinesBetween, upcomingDeadlines, seasonAt, seasonHistory, seasonProgress, shiftToWorkday, daysUntil } from '../lib/calendar.js';
 import { rewardContext, isUnlocked, resolveProfile, titleOptions } from '../lib/rewards.js';
 import { parsePeriod, latestPeriods, computeWrapped, equivalence, yearUnlockDate, isYearUnlocked, featuredYear } from '../lib/wrapped.js';
-import { emptyCloud, mergeData, buildUploads, applyPulled, profileAction } from '../lib/cloud-core.js';
+import { emptyCloud, mergeData, buildUploads, applyPulled, profileAction, prefsOf, syncSig } from '../lib/cloud-core.js';
 import { totalXp, levelOf, grantDailyBonus, dropsCrossed, bonusXp } from '../lib/xp.js';
 import { weekOf, pickChallenges, challengeState, resolveChallenges } from '../lib/challenges.js';
 import { isLoadingUrl, addLoading, outageKind, outageTarget, recordOutage, recordTabs } from '../lib/extras.js';
@@ -477,8 +477,13 @@ test('nube: el perfil gana el cambio más reciente', () => {
   assert.equal(profileAction({ profile: { name: 'Local' }, profileUpdatedAt: Date.parse('2026-10-29T09:00:00Z') }, remote, cloud), 'pull');
   assert.equal(profileAction({ profile: { name: 'Local' }, profileUpdatedAt: Date.parse('2026-10-29T11:00:00Z') }, remote, cloud), 'push');
   assert.equal(profileAction({ profile: { name: 'Local' } }, null, cloud), 'push');
-  cloud.sent.profile = JSON.stringify({ name: 'Remoto' });
+  cloud.sent.profile = syncSig({ name: 'Remoto' }, {});
   assert.equal(profileAction({ profile: { name: 'Remoto' }, profileUpdatedAt: Date.parse('2026-10-29T10:00:00Z') }, remote, cloud), null);
+  // Los ajustes viajan con el perfil: cambiar solo el sonido también se sube; lo local (catálogo, tiempos) no.
+  const s = { profile: { name: 'Remoto' }, sound: false, idleMinutes: 3, profileUpdatedAt: Date.parse('2026-10-29T12:00:00Z') };
+  assert.deepEqual(prefsOf(s), { sound: false });
+  assert.equal(profileAction(s, remote, cloud), 'push');
+  assert.equal(profileAction({ profile: { name: 'Remoto' }, profileUpdatedAt: 1 }, { ...remote, prefs: { sound: false } }, cloud), 'pull');
 });
 
 console.log(`\n${ok} pruebas OK`);

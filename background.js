@@ -19,7 +19,7 @@ import { loadData, saveData, loadSettings, saveSettings } from './lib/store.js';
 import { showToasts } from './lib/toast.js';
 import { LOADING, addLoading, isLoadingUrl, outageKind, outageTarget, recordOutage, recordTabs } from './lib/extras.js';
 import { BRAND, CLOUD_ENABLED } from './config.js';
-import { applyPulled, buildUploads, emptyCloud, mergeData, profileAction } from './lib/cloud-core.js';
+import { applyPulled, buildUploads, emptyCloud, mergeData, prefsOf, profileAction, syncSig, SYNCED_PREFS } from './lib/cloud-core.js';
 import { api, getSession, selectAll, upsert } from './lib/cloud.js';
 
 const TICK = 'tick';
@@ -430,12 +430,13 @@ async function runSync() {
     Object.assign(cloud.sent, up.sent);
 
     // Perfil: gana el cambio más reciente
-    const [remoteProfile] = await api('/profiles?select=display_name,profile,updated_at');
+    const [remoteProfile] = await api('/profiles?select=display_name,profile,prefs,updated_at');
     const action = profileAction(snap.settings, remoteProfile, cloud);
     if (action === 'push') {
       const profile = snap.settings.profile || {};
-      await upsert('profiles', [{ user_id: uid, display_name: (profile.name || '').slice(0, 30) || null, profile }], 'user_id');
-      cloud.sent.profile = JSON.stringify(profile);
+      const prefs = prefsOf(snap.settings);
+      await upsert('profiles', [{ user_id: uid, display_name: (profile.name || '').slice(0, 30) || null, profile, prefs }], 'user_id');
+      cloud.sent.profile = syncSig(profile, prefs);
     }
 
     // Bajar (lo de los otros PCs, solo lo cambiado desde la última vez)
@@ -459,8 +460,9 @@ async function runSync() {
       const { personChanged } = applyPulled(data, cloud, { devices, rows, extras, records, achievements, challenges, bonus });
       if (personChanged) await saveData(data);
       if (action === 'pull') {
-        await saveSettings({ ...settings, profile: remoteProfile.profile || {}, profileUpdatedAt: Date.parse(remoteProfile.updated_at) });
-        cloud.sent.profile = JSON.stringify(remoteProfile.profile || {});
+        const prefs = Object.fromEntries(Object.entries(remoteProfile.prefs || {}).filter(([k]) => SYNCED_PREFS.includes(k)));
+        await saveSettings({ ...settings, ...prefs, profile: remoteProfile.profile || {}, profileUpdatedAt: Date.parse(remoteProfile.updated_at) });
+        cloud.sent.profile = syncSig(remoteProfile.profile, remoteProfile.prefs);
       }
       await chrome.storage.local.set({ cloud });
     });

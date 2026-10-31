@@ -13,6 +13,7 @@ import { DEFAULT_SETTINGS, saveSettings } from './lib/store.js';
 import { applyTheme, capsule, el, fill, fmtCountdown, fmtProgress, levelColor, loadAll, paintAvatar, profileFor, shortcutsOf, updateAvailable, withLive } from './lib/view.js';
 import { showToasts } from './lib/toast.js';
 import { api, deleteMyAccount, signIn, signOut } from './lib/cloud.js';
+import { SYNCED_PREFS } from './lib/cloud-core.js';
 import { BRAND, CLOUD_ENABLED, REMOTE_ENABLED } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -789,7 +790,7 @@ function renderChallenges() {
 // ---------- Perfil ----------
 
 async function updateProfile(patch) {
-  await updateSettings({ profile: { ...(st.settings.profile || {}), ...patch }, profileUpdatedAt: Date.now() });
+  await updateSettings({ profile: { ...(st.settings.profile || {}), ...patch } });
 }
 
 const THEME_SW = {
@@ -1014,7 +1015,8 @@ function wireProfile() {
 // Pocas opciones a propósito: las sedes, los plazos y los tiempos los decide el catálogo.
 
 async function updateSettings(patch) {
-  st.settings = { ...st.settings, ...patch };
+  const synced = Object.keys(patch).some((k) => k === 'profile' || SYNCED_PREFS.includes(k));
+  st.settings = { ...st.settings, ...patch, ...(synced ? { profileUpdatedAt: Date.now() } : {}) };
   await saveSettings(st.settings);
 }
 
